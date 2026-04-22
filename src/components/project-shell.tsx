@@ -22,7 +22,7 @@ export function ProjectShell({
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 xl:px-8">
-        <Card className="overflow-hidden border-black/10 bg-[linear-gradient(180deg,rgba(248,244,236,0.95)_0%,rgba(235,227,214,0.88)_100%)] px-5 py-5 sm:px-8 sm:py-6">
+        <Card className="overflow-hidden border-[var(--line-strong)] bg-[linear-gradient(180deg,rgba(19,27,35,0.96)_0%,rgba(11,16,21,0.92)_100%)] px-5 py-5 sm:px-8 sm:py-6">
           <div className="grid gap-6">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-4xl">
@@ -39,7 +39,7 @@ export function ProjectShell({
                 <h1 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
                   {title}
                 </h1>
-                <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--muted-strong)]">
+                <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--foreground-soft)]">
                   {description}
                 </p>
               </div>
@@ -48,12 +48,14 @@ export function ProjectShell({
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="rounded-[20px] border border-black/8 bg-[rgba(255,255,255,0.72)] px-4 py-3"
+                    className="rounded-[20px] border border-[var(--line)] bg-[rgba(24,34,45,0.84)] px-4 py-3"
                   >
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
                       {stat.label}
                     </p>
-                    <p className="mt-2 text-base font-semibold">{stat.value}</p>
+                    <p className="mt-2 text-base font-semibold text-[var(--foreground)]">
+                      {stat.value}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -104,8 +106,8 @@ function NavButton({
       href={href}
       className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
         isActive
-          ? "bg-[var(--accent)] text-white"
-          : "border border-black/10 bg-white text-[var(--muted-strong)] hover:bg-[var(--surface-muted)]"
+          ? "bg-[var(--accent)] text-[#051017]"
+          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface-muted)]"
       }`}
     >
       {label}

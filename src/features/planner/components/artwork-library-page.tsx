@@ -2,10 +2,12 @@
 
 import { useMemo } from "react";
 import { ProjectShell } from "@/components/project-shell";
+import { ArtworkImageField, ArtworkThumbnail } from "@/components/ui/artwork-image-field";
 import { Card } from "@/components/ui/card";
 import { Field, inputClassName } from "@/components/ui/field";
 import { useShallow } from "zustand/react/shallow";
 import { cmToMm, formatArtworkSize, mmToCm } from "@/lib/domain/format";
+import { readFileAsDataUrl } from "@/lib/file";
 import {
   getProjectBundle,
   useExhibitionStore,
@@ -30,6 +32,11 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
 
   if (!bundle) {
     return null;
+  }
+
+  async function handleArtworkImageSelect(artworkId: string, file: File) {
+    const imageUrl = await readFileAsDataUrl(file);
+    updateArtwork(projectId, artworkId, { imageUrl });
   }
 
   return (
@@ -72,19 +79,28 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
                 key={artwork.id}
                 type="button"
                 onClick={() => selectArtwork(projectId, artwork.id)}
-                className={`w-full rounded-[18px] border px-4 py-4 text-left transition ${
+                className={`w-full rounded-[20px] border px-4 py-4 text-left transition ${
                   artwork.id === selectedArtwork?.id
-                    ? "border-[var(--accent)] bg-[rgba(43,97,82,0.08)]"
-                    : "border-black/8 bg-white hover:border-black/16"
+                    ? "border-[var(--accent)] bg-[rgba(126,197,214,0.1)]"
+                    : "border-[var(--line)] bg-[var(--surface-soft)] hover:border-[var(--line-strong)]"
                 }`}
               >
-                <p className="text-sm font-semibold">{artwork.title}</p>
-                <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                  {artwork.artist}
-                </p>
-                <p className="mt-2 text-sm text-[var(--muted-strong)]">
-                  {formatArtworkSize(artwork.widthMm, artwork.heightMm)}
-                </p>
+                <div className="grid gap-4 sm:grid-cols-[84px_minmax(0,1fr)] sm:items-center">
+                  <ArtworkThumbnail
+                    imageUrl={artwork.imageUrl}
+                    title={artwork.title}
+                    className="h-[84px] w-[84px] rounded-[16px]"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold">{artwork.title}</p>
+                    <p className="mt-1 text-sm text-[var(--muted-strong)]">
+                      {artwork.artist}
+                    </p>
+                    <p className="mt-2 text-sm text-[var(--foreground-soft)]">
+                      {formatArtworkSize(artwork.widthMm, artwork.heightMm)}
+                    </p>
+                  </div>
+                </div>
               </button>
             ))}
           </div>
@@ -166,10 +182,17 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
                 </Field>
               </div>
               <div className="md:col-span-2">
-                <Field label="Image">
-                  <div className="rounded-[18px] border border-dashed border-black/12 bg-[var(--surface-muted)] px-4 py-10 text-center text-sm text-[var(--muted-strong)]">
-                    Image placeholder for MVP. Storage can later move to Supabase without changing the artwork data model.
-                  </div>
+                <Field label="Artwork visual">
+                  <ArtworkImageField
+                    imageUrl={selectedArtwork.imageUrl}
+                    title={selectedArtwork.title}
+                    onSelectFile={(file) =>
+                      handleArtworkImageSelect(selectedArtwork.id, file)
+                    }
+                    onClear={() =>
+                      updateArtwork(projectId, selectedArtwork.id, { imageUrl: undefined })
+                    }
+                  />
                 </Field>
               </div>
             </div>

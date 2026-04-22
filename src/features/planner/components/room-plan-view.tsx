@@ -2,6 +2,11 @@
 
 import { getPlacementValidation } from "@/lib/domain/placement";
 import { formatDimension } from "@/lib/domain/format";
+import {
+  HUMAN_REFERENCE_DEPTH_MM,
+  HUMAN_REFERENCE_LABEL,
+  HUMAN_REFERENCE_WIDTH_MM,
+} from "@/lib/domain/scale-reference";
 import type { Artwork, Opening, Placement, Room, Wall } from "@/lib/domain/types";
 
 export function RoomPlanView({
@@ -29,17 +34,19 @@ export function RoomPlanView({
   const minY = -800;
   const maxX = room.widthMm + 800;
   const maxY = room.depthMm + 800;
+  const scaleReferenceX = Math.max(420, room.widthMm - HUMAN_REFERENCE_WIDTH_MM - 860);
+  const scaleReferenceY = Math.max(420, room.depthMm - HUMAN_REFERENCE_DEPTH_MM - 860);
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-black/8 bg-white shadow-[0_18px_60px_rgba(37,33,28,0.08)]">
-      <div className="flex items-center justify-between border-b border-black/8 px-6 py-4">
+    <div className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
             Room Plan
           </p>
           <h3 className="mt-1 text-lg font-semibold">{room.name}</h3>
         </div>
-        <p className="rounded-full border border-black/8 bg-[var(--surface-muted)] px-3 py-1 text-sm text-[var(--muted-strong)]">
+        <p className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1 text-sm text-[var(--foreground-soft)]">
           {formatDimension(room.widthMm)} x {formatDimension(room.depthMm)}
         </p>
       </div>
@@ -57,6 +64,35 @@ export function RoomPlanView({
           stroke="rgba(37,33,28,0.3)"
           strokeWidth={120}
         />
+
+        <g opacity={0.74}>
+          <ellipse
+            cx={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
+            cy={scaleReferenceY + HUMAN_REFERENCE_DEPTH_MM / 2}
+            rx={HUMAN_REFERENCE_WIDTH_MM / 2}
+            ry={HUMAN_REFERENCE_DEPTH_MM / 2}
+            fill="rgba(28,59,84,0.1)"
+            stroke="rgba(28,59,84,0.34)"
+            strokeWidth={44}
+          />
+          <circle
+            cx={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
+            cy={scaleReferenceY + 74}
+            r={58}
+            fill="rgba(28,59,84,0.14)"
+            stroke="rgba(28,59,84,0.34)"
+            strokeWidth={28}
+          />
+          <text
+            x={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
+            y={scaleReferenceY + HUMAN_REFERENCE_DEPTH_MM + 240}
+            fontSize={160}
+            textAnchor="middle"
+            fill="rgba(28,59,84,0.76)"
+          >
+            {HUMAN_REFERENCE_LABEL}
+          </text>
+        </g>
 
         {walls.map((wall) => {
           const isSelected = wall.id === selectedWallId;

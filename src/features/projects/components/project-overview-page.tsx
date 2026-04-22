@@ -84,7 +84,7 @@ export function ProjectOverviewPage({ projectId }: { projectId: string }) {
                     <div className="flex items-center justify-end">
                       <Link
                         href={`/projects/${projectId}/planner`}
-                        className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[rgba(255,255,255,0.9)]"
+                        className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
                       >
                         Review wall
                       </Link>
@@ -131,7 +131,7 @@ function ActionLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[var(--surface-muted)]"
+      className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
     >
       {label}
     </Link>
@@ -148,19 +148,19 @@ function MetricCard({
   caption: string;
 }) {
   return (
-    <div className="rounded-[22px] border border-black/8 bg-[var(--surface-muted)] px-5 py-4">
+    <div className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-muted)] px-5 py-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-strong)]">
         {label}
       </p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.03em]">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">{caption}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--foreground-soft)]">{caption}</p>
     </div>
   );
 }
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] border border-black/8 bg-white px-4 py-3">
+    <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
         {label}
       </p>

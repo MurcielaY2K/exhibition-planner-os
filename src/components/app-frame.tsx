@@ -16,12 +16,12 @@ export function AppFrame({
   return (
     <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 xl:px-8">
-        <div className="rounded-[32px] border border-black/8 bg-[linear-gradient(180deg,rgba(248,244,236,0.92)_0%,rgba(238,231,219,0.88)_100%)] px-5 py-5 shadow-[0_20px_70px_rgba(31,27,22,0.08)] sm:px-8 sm:py-6">
+        <div className="rounded-[32px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(20,29,38,0.96)_0%,rgba(11,16,21,0.94)_100%)] px-5 py-5 shadow-[0_28px_90px_rgba(0,0,0,0.34)] sm:px-8 sm:py-6">
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between gap-4">
               <Link
                 href="/"
-                className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--muted-strong)] transition hover:text-[var(--foreground)]"
+                className="text-xs font-semibold uppercase tracking-[0.32em] text-[var(--muted-strong)] transition hover:text-[var(--foreground-soft)]"
               >
                 {eyebrow}
               </Link>
@@ -30,14 +30,14 @@ export function AppFrame({
 
             <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
               <div>
-                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">
+                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">
                   {title}
                 </h1>
-                <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--muted-strong)] sm:text-lg">
+                <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--foreground-soft)] sm:text-lg">
                   {description}
                 </p>
               </div>
-              <div className="rounded-[24px] border border-black/8 bg-[rgba(255,255,255,0.74)] px-5 py-4 text-sm leading-6 text-[var(--muted-strong)]">
+              <div className="rounded-[24px] border border-[var(--line)] bg-[rgba(24,34,45,0.84)] px-5 py-4 text-sm leading-6 text-[var(--foreground-soft)]">
                 Exhibition Planner OS is built for real gallery and museum decisions:
                 room definition, precise placement, installer logic, and professional
                 outputs from one authoritative geometry model.

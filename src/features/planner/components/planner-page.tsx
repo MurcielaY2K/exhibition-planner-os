@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ProjectShell } from "@/components/project-shell";
+import { ArtworkImageField } from "@/components/ui/artwork-image-field";
 import { Card } from "@/components/ui/card";
 import { Field, inputClassName } from "@/components/ui/field";
 import { useShallow } from "zustand/react/shallow";
@@ -35,6 +36,7 @@ import {
   getProjectBundle,
   useExhibitionStore,
 } from "@/lib/state/use-exhibition-store";
+import { readFileAsDataUrl } from "@/lib/file";
 import { Room3DView } from "@/features/planner/components/room-3d-view";
 import { RoomPlanView } from "@/features/planner/components/room-plan-view";
 import { WallElevationView } from "@/features/planner/components/wall-elevation-view";
@@ -280,6 +282,15 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     };
   }, []);
 
+  async function handleSelectedArtworkImage(file: File) {
+    if (!selectedArtwork) {
+      return;
+    }
+
+    const imageUrl = await readFileAsDataUrl(file);
+    updateArtwork(projectId, selectedArtwork.id, { imageUrl });
+  }
+
   function applyWarningFix(warning: DrillPointWarning) {
     if (!selectedPlacement || !warning.fix) {
       return;
@@ -488,7 +499,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
               />
             </div>
 
-            <div className="rounded-[20px] border border-black/8 bg-[var(--surface-muted)] p-4">
+            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
               <p className="text-sm font-semibold text-[var(--foreground)]">
                 Generated walls
               </p>
@@ -501,7 +512,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     className={`flex items-center justify-between rounded-[16px] border px-4 py-3 text-left transition ${
                       wall.id === selectedWall?.id
                         ? "border-[var(--accent)] bg-[rgba(43,97,82,0.08)]"
-                        : "border-black/8 bg-white hover:border-black/16"
+                        : "border-[var(--line)] bg-[var(--surface-soft)] hover:border-[var(--line-strong)]"
                     }`}
                   >
                     <span className="text-sm font-medium">{wall.name}</span>
@@ -513,7 +524,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-black/8 bg-[var(--surface-muted)] p-4">
+            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--foreground)]">
@@ -554,7 +565,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       className={`rounded-[16px] border p-4 transition ${
                         opening.id === selectedOpening?.id
                           ? "border-[var(--accent)] bg-[rgba(43,97,82,0.08)]"
-                          : "border-black/8 bg-white"
+                          : "border-[var(--line)] bg-[var(--surface-soft)]"
                       }`}
                     >
                       <button
@@ -587,7 +598,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-black/8 bg-[var(--surface-muted)] p-4">
+            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-[var(--foreground)]">
@@ -599,7 +610,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 </div>
                 <button
                   type="button"
-                  className="rounded-full border border-black/10 px-3 py-1 text-sm text-[var(--muted-strong)] transition hover:bg-white"
+                    className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1 text-sm text-[var(--foreground-soft)] transition hover:bg-[var(--surface)]"
                   onClick={() => addArtwork(projectId)}
                 >
                   Add
@@ -620,7 +631,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     return (
                       <div
                         key={artwork.id}
-                        className="rounded-[16px] border border-black/8 bg-white p-4"
+                    className="rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] p-4"
                       >
                         <button
                           type="button"
@@ -645,7 +656,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                             </button>
                           ) : null}
                           {placement ? (
-                            <span className="rounded-full border border-black/10 px-3 py-1.5 text-sm text-[var(--muted-strong)]">
+                  <span className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1.5 text-sm text-[var(--foreground-soft)]">
                               Placed
                             </span>
                           ) : null}
@@ -672,7 +683,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 <p className="mt-2 text-sm text-[var(--muted-strong)]">
                   {workspaceDescription}
                 </p>
-                <p className="mt-3 rounded-[16px] border border-black/8 bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
+                  <p className="mt-3 rounded-[16px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
                   Coordinate system: origin is the bottom-left of the active wall.
                   `xMm` measures from the left wall edge to the artwork&apos;s left edge.
                   `yMm` measures from the floor line to the artwork&apos;s bottom edge.
@@ -706,7 +717,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   <button
                     type="button"
                     onClick={handleExportExhibitionPdf}
-                    className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[var(--surface-muted)]"
+                    className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
                   >
                     Export Exhibition PDF
                   </button>
@@ -848,7 +859,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   model is created.
                 </p>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
-                  <Card className="border-black/8 bg-[var(--surface-muted)] p-5 shadow-none">
+                <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
                     <p className="text-lg font-semibold">Active wall sheet</p>
                     <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
                       Export the selected wall as a technical elevation with artwork IDs,
@@ -862,7 +873,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       Export Wall PDF
                     </button>
                   </Card>
-                  <Card className="border-black/8 bg-[var(--surface-muted)] p-5 shadow-none">
+                <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
                     <p className="text-lg font-semibold">Full exhibition set</p>
                     <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
                       Build a multi-page exhibition document with one wall per page and an optional cover.
@@ -870,7 +881,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     <button
                       type="button"
                       onClick={handleExportExhibitionPdf}
-                      className="mt-5 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[rgba(255,255,255,0.9)]"
+                    className="mt-5 rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface)]"
                     >
                       Export Exhibition PDF
                     </button>
@@ -965,7 +976,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     updatePlacement(projectId, selectedPlacement.id, { yMm: valueMm })
                   }
                 />
-                <div className="grid gap-2 rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4 text-sm">
+                <div className="grid gap-2 rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm">
                   <MetaRow
                     label="Installer ID"
                     value={selectedPlacement.installId}
@@ -1025,7 +1036,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     </>
                   ) : null}
                 </div>
-                <div className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4">
+                <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                   <p className="text-sm font-semibold text-[var(--foreground)]">
                     Drill points
                   </p>
@@ -1041,7 +1052,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       selectedHangingPoints.map((point) => (
                         <div
                           key={point.label}
-                          className="rounded-[14px] border border-black/8 bg-white px-3 py-3"
+                    className="rounded-[14px] border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-3"
                         >
                           <p className="text-sm font-semibold text-[var(--foreground)]">
                             {point.label}
@@ -1087,7 +1098,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       {selectedDrillWarnings.map((warning) => (
                         <li
                           key={`${warning.code}-${warning.pointLabel ?? "placement"}-${warning.message}`}
-                          className="rounded-[14px] border border-black/8 bg-white/80 px-3 py-2"
+                    className="rounded-[14px] border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-2"
                         >
                           <p
                             className={`font-semibold ${
@@ -1114,7 +1125,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                                 className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                                   selectedPlacement?.isLocked === true &&
                                   warning.fix.kind === "nudge-placement"
-                                    ? "cursor-not-allowed border border-black/8 bg-white/70 text-[var(--muted-strong)] opacity-55"
+                                    ? "cursor-not-allowed border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--muted-strong)] opacity-55"
                                     : warning.severity === "error"
                                       ? "bg-[#8f3931] text-white hover:bg-[#7b302a]"
                                       : "bg-[#b7791f] text-white hover:bg-[#996514]"
@@ -1139,7 +1150,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     </p>
                   ) : null}
                 </div>
-                <div className="grid gap-3 rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4">
+                <div className="grid gap-3 rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
                   <Field label="Mount type">
                     <select
                       className={inputClassName}
@@ -1227,13 +1238,13 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   </div>
                   <button
                     type="button"
-                    className="rounded-[16px] border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-white"
+                    className="rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface)]"
                     onClick={() => autoSequenceWallPlacements(projectId, selectedWall.id)}
                   >
                     Auto-sequence this wall left to right
                   </button>
                 </div>
-                <p className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
+                <p className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
                   Standard hanging centerline guide: {formatMillimeters(STANDARD_CENTERLINE_MM)}.
                   Placement snaps to this guide and to neighboring artwork edges within a
                   {formatMillimeters(SNAP_TOLERANCE_MM)} tolerance.
@@ -1317,7 +1328,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     updateOpening(projectId, selectedOpening.id, { heightMm: valueMm })
                   }
                 />
-                <div className="grid gap-2 rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4 text-sm">
+                <div className="grid gap-2 rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm">
                   {selectedOpeningBoundingBox ? (
                     <>
                       <MetaRow
@@ -1331,7 +1342,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     </>
                   ) : null}
                 </div>
-                <p className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
+                <p className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
                   Openings use the same wall coordinate system and bounding-box geometry as artworks,
                   so any overlap is validated deterministically in mm.
                 </p>
@@ -1385,7 +1396,48 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     updateArtwork(projectId, selectedArtwork.id, { heightMm: valueMm })
                   }
                 />
-                <p className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
+                <DimensionField
+                  label="Depth"
+                  valueMm={selectedArtwork.depthMm ?? 0}
+                  onChange={(valueMm) =>
+                    updateArtwork(projectId, selectedArtwork.id, { depthMm: valueMm })
+                  }
+                />
+                <Field label="Year">
+                  <input
+                    className={inputClassName}
+                    value={selectedArtwork.year ?? ""}
+                    onChange={(event) =>
+                      updateArtwork(projectId, selectedArtwork.id, {
+                        year: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Medium">
+                  <input
+                    className={inputClassName}
+                    value={selectedArtwork.medium ?? ""}
+                    onChange={(event) =>
+                      updateArtwork(projectId, selectedArtwork.id, {
+                        medium: event.target.value,
+                      })
+                    }
+                  />
+                </Field>
+                <Field label="Artwork visual">
+                  <ArtworkImageField
+                    imageUrl={selectedArtwork.imageUrl}
+                    title={selectedArtwork.title}
+                    onSelectFile={handleSelectedArtworkImage}
+                    onClear={() =>
+                      updateArtwork(projectId, selectedArtwork.id, {
+                        imageUrl: undefined,
+                      })
+                    }
+                  />
+                </Field>
+                <p className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
                   Internal unit: millimeters. Display helpers show centimeters and meters,
                   but all geometry and constraints are resolved in mm.
                 </p>
@@ -1396,7 +1448,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   title={selectedWall.name}
                   subtitle="Wall definition"
                 />
-                <p className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--muted-strong)]">
+                <p className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
                   Length: {formatDimension(selectedWall.lengthMm)} ({formatMeters(selectedWall.lengthMm)})
                   <br />
                   Height: {formatDimension(selectedWall.heightMm)} ({formatMeters(selectedWall.heightMm)})
@@ -1453,8 +1505,8 @@ function ViewButton({
       onClick={onClick}
       className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
         isActive
-          ? "bg-[var(--accent)] text-white"
-          : "border border-black/10 text-[var(--muted-strong)] hover:bg-[var(--surface-muted)]"
+          ? "bg-[var(--accent)] text-[#051017]"
+          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface-muted)]"
       }`}
     >
       {label}
@@ -1477,8 +1529,8 @@ function ModeButton({
       onClick={onClick}
       className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
         isActive
-          ? "bg-[var(--foreground)] text-white"
-          : "border border-black/10 bg-white text-[var(--muted-strong)] hover:bg-[var(--surface-muted)]"
+          ? "bg-[var(--foreground)] text-[var(--surface-strong)]"
+          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface-muted)]"
       }`}
     >
       {label}
@@ -1494,7 +1546,7 @@ function ToolbarGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4">
+    <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
       <p className="text-sm font-semibold text-[var(--foreground)]">{title}</p>
       <div className="mt-3 flex flex-wrap gap-2">{children}</div>
     </div>
@@ -1517,8 +1569,8 @@ function ToolButton({
       onClick={onClick}
       className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
         disabled
-          ? "cursor-not-allowed border border-black/8 bg-white/70 text-[var(--muted-strong)] opacity-55"
-          : "border border-black/10 bg-white text-[var(--muted-strong)] hover:bg-white"
+          ? "cursor-not-allowed border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--muted-strong)] opacity-55"
+          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface)]"
       }`}
     >
       {label}
@@ -1554,7 +1606,7 @@ function DimensionField({
 
 function SummaryBlock({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="rounded-[18px] border border-black/8 bg-[var(--surface-muted)] p-4">
+    <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
       <p className="text-sm font-semibold text-[var(--foreground)]">{title}</p>
       <p className="mt-1 text-sm text-[var(--muted-strong)]">{subtitle}</p>
     </div>
@@ -1579,10 +1631,10 @@ function ValidationCheckChip({
 }) {
   const className =
     status === "error"
-      ? "border-[rgba(143,57,49,0.18)] bg-white text-[#8f3931]"
+      ? "border-[rgba(143,57,49,0.18)] bg-[var(--surface-soft)] text-[#ff8e86]"
       : status === "warning"
-        ? "border-[rgba(176,121,31,0.18)] bg-white text-[#8a5b12]"
-        : "border-[rgba(43,97,82,0.16)] bg-white text-[var(--accent)]";
+        ? "border-[rgba(176,121,31,0.18)] bg-[var(--surface-soft)] text-[#f0b95f]"
+        : "border-[rgba(126,197,214,0.16)] bg-[var(--surface-soft)] text-[var(--accent)]";
 
   return (
     <div className={`rounded-[14px] border px-3 py-2 ${className}`}>

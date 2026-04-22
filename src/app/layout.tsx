@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { satoshi } from "@/app/fonts";
 
 export const metadata: Metadata = {
   title: "Exhibition Planner OS",
@@ -13,8 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full">{children}</body>
+    <html lang="en" className={`${satoshi.variable} h-full antialiased`}>
+      <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
+        {children}
+      </body>
     </html>
   );
 }

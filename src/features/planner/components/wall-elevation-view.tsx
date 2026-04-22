@@ -21,6 +21,11 @@ import {
   formatDimension,
   formatMillimeters,
 } from "@/lib/domain/format";
+import {
+  HUMAN_REFERENCE_HEIGHT_MM,
+  HUMAN_REFERENCE_LABEL,
+  HUMAN_REFERENCE_WIDTH_MM,
+} from "@/lib/domain/scale-reference";
 import type {
   Artwork,
   DrillPointWarning,
@@ -54,6 +59,7 @@ const DRILL_POINT_RADIUS_MM = 14;
 const DRILL_POINT_HALO_RADIUS_MM = 26;
 const WARNING_COLOR = "#b7791f";
 const ERROR_COLOR = "#8f3931";
+const SCALE_REFERENCE_INSET_MM = 180;
 
 export function WallElevationView({
   wall,
@@ -89,6 +95,10 @@ export function WallElevationView({
     (_, index) => index * 500,
   );
   const standardCenterlineY = wall.heightMm - STANDARD_CENTERLINE_MM;
+  const scaleReferenceX = Math.max(
+    140,
+    wall.lengthMm - HUMAN_REFERENCE_WIDTH_MM - SCALE_REFERENCE_INSET_MM,
+  );
   const activeGuides = [
     ...(visualGuides ?? []),
     ...(dragState ? visualGuidesFromSnapGuides(dragState.guides) : []),
@@ -179,15 +189,15 @@ export function WallElevationView({
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-black/8 bg-white shadow-[0_18px_60px_rgba(37,33,28,0.08)]">
-      <div className="flex items-center justify-between border-b border-black/8 px-6 py-4">
+    <div className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
             Wall Elevation
           </p>
           <h3 className="mt-1 text-lg font-semibold">{wall.name}</h3>
         </div>
-        <p className="rounded-full border border-black/8 bg-[var(--surface-muted)] px-3 py-1 text-sm text-[var(--muted-strong)]">
+        <p className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1 text-sm text-[var(--foreground-soft)]">
           {formatDimension(wall.lengthMm)} L / {formatDimension(wall.heightMm)} H
         </p>
       </div>
@@ -286,6 +296,63 @@ export function WallElevationView({
           stroke="rgba(47, 43, 37, 0.18)"
           strokeWidth={28}
         />
+
+        <g opacity={0.62}>
+          <circle
+            cx={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
+            cy={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 120}
+            r={112}
+            fill="rgba(28,59,84,0.08)"
+            stroke="rgba(28,59,84,0.34)"
+            strokeWidth={18}
+          />
+          <rect
+            x={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 - 118}
+            y={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 270}
+            width={236}
+            height={560}
+            rx={118}
+            fill="rgba(28,59,84,0.08)"
+            stroke="rgba(28,59,84,0.34)"
+            strokeWidth={18}
+          />
+          <line
+            x1={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 - 90}
+            x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 - 46}
+            y1={wall.heightMm - 40}
+            y2={wall.heightMm - 560}
+            stroke="rgba(28,59,84,0.38)"
+            strokeWidth={24}
+            strokeLinecap="round"
+          />
+          <line
+            x1={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 + 90}
+            x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 + 46}
+            y1={wall.heightMm - 40}
+            y2={wall.heightMm - 560}
+            stroke="rgba(28,59,84,0.38)"
+            strokeWidth={24}
+            strokeLinecap="round"
+          />
+          <line
+            x1={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 - 220}
+            x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 + 220}
+            y1={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 500}
+            y2={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 620}
+            stroke="rgba(28,59,84,0.34)"
+            strokeWidth={22}
+            strokeLinecap="round"
+          />
+          <text
+            x={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
+            y={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM - 34}
+            fontSize={84}
+            textAnchor="middle"
+            fill="rgba(28,59,84,0.78)"
+          >
+            {HUMAN_REFERENCE_LABEL}
+          </text>
+        </g>
 
         {openings.map((opening) => {
           const box = getOpeningBoundingBox(opening);
@@ -494,9 +561,7 @@ export function WallElevationView({
                 width={placement.widthMm}
                 height={placement.heightMm}
                 rx={42}
-                fill={fill}
-                stroke={stroke}
-                strokeWidth={isSelected ? 28 : 18}
+                fill={artwork.imageUrl ? "rgba(10,14,18,0.92)" : fill}
                 style={{
                   cursor: placement.isLocked
                     ? "not-allowed"
@@ -505,22 +570,94 @@ export function WallElevationView({
                       : "grab",
                 }}
               />
-              <text
-                x={placement.xMm + 90}
-                y={topY + 150}
-                fontSize={110}
-                fill="#17120d"
-              >
-                {artwork.title}
-              </text>
-              <text
-                x={placement.xMm + 90}
-                y={topY + 286}
-                fontSize={90}
-                fill="rgba(48, 43, 37, 0.76)"
-              >
-                {formatArtworkSize(placement.widthMm, placement.heightMm)}
-              </text>
+              {artwork.imageUrl ? (
+                <>
+                  <defs>
+                    <clipPath id={`artwork-preview-${placement.id}`}>
+                      <rect
+                        x={placement.xMm}
+                        y={topY}
+                        width={placement.widthMm}
+                        height={placement.heightMm}
+                        rx={42}
+                      />
+                    </clipPath>
+                  </defs>
+                  <image
+                    href={artwork.imageUrl}
+                    x={placement.xMm}
+                    y={topY}
+                    width={placement.widthMm}
+                    height={placement.heightMm}
+                    preserveAspectRatio="xMidYMid slice"
+                    clipPath={`url(#artwork-preview-${placement.id})`}
+                    opacity={isInvalid ? 0.36 : 0.94}
+                  />
+                  {(isSelected || isInvalid) ? (
+                    <rect
+                      x={placement.xMm}
+                      y={topY}
+                      width={placement.widthMm}
+                      height={placement.heightMm}
+                      rx={42}
+                      fill={fill}
+                    />
+                  ) : null}
+                  <rect
+                    x={placement.xMm}
+                    y={topY + placement.heightMm - 260}
+                    width={placement.widthMm}
+                    height={260}
+                    fill="rgba(8,11,16,0.8)"
+                    clipPath={`url(#artwork-preview-${placement.id})`}
+                  />
+                  <text
+                    x={placement.xMm + 90}
+                    y={topY + placement.heightMm - 126}
+                    fontSize={96}
+                    fill="#f4f7fb"
+                  >
+                    {artwork.title}
+                  </text>
+                  <text
+                    x={placement.xMm + 90}
+                    y={topY + placement.heightMm - 40}
+                    fontSize={74}
+                    fill="rgba(214,223,235,0.92)"
+                  >
+                    {artwork.artist} / {formatArtworkSize(placement.widthMm, placement.heightMm)}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <text
+                    x={placement.xMm + 90}
+                    y={topY + 150}
+                    fontSize={110}
+                    fill="#17120d"
+                  >
+                    {artwork.title}
+                  </text>
+                  <text
+                    x={placement.xMm + 90}
+                    y={topY + 286}
+                    fontSize={90}
+                    fill="rgba(48, 43, 37, 0.76)"
+                  >
+                    {formatArtworkSize(placement.widthMm, placement.heightMm)}
+                  </text>
+                </>
+              )}
+              <rect
+                x={placement.xMm}
+                y={topY}
+                width={placement.widthMm}
+                height={placement.heightMm}
+                rx={42}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={isSelected ? 28 : 18}
+              />
               {hangingPoints.map((point) => {
                 const pointY = wall.heightMm - point.yMm;
                 const pointWarnings = drillWarnings.filter(
