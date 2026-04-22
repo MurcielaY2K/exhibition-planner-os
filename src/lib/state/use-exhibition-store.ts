@@ -23,6 +23,7 @@ import type {
   Project,
   ProjectBundle,
   Room,
+  SavedCameraView,
 } from "@/lib/domain/types";
 
 interface ExhibitionState {
@@ -56,6 +57,11 @@ interface ExhibitionState {
     patches: Array<Pick<Placement, "id" | "xMm" | "yMm">>,
   ) => void;
   autoSequenceWallPlacements: (projectId: string, wallId: string) => void;
+  saveCameraView: (
+    projectId: string,
+    view: Omit<SavedCameraView, "id"> & { id?: string },
+  ) => string | undefined;
+  deleteCameraView: (projectId: string, cameraViewId: string) => void;
 }
 
 function createId(prefix: string) {
@@ -120,6 +126,19 @@ export function getProjectBundle(
   return findProject(projects, projectId);
 }
 
+function ensurePlannerSelection(selection?: PlannerSelection): PlannerSelection {
+  return {
+    selectedRoomId: selection?.selectedRoomId ?? "",
+    selectedWallId: selection?.selectedWallId ?? "",
+    selectedArtworkId: selection?.selectedArtworkId,
+    selectedOpeningId: selection?.selectedOpeningId,
+    selectedPlacementIds: selection?.selectedPlacementIds ?? [],
+    primaryPlacementId: selection?.primaryPlacementId,
+    activeView: selection?.activeView ?? "elevation",
+    savedCameraViews: selection?.savedCameraViews ?? [],
+  };
+}
+
 export const useExhibitionStore = create<ExhibitionState>((set) => ({
   projects: [seedProject],
   ui: seedSelection,
@@ -165,6 +184,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
           selectedWallId: room.wallIds[0],
           selectedPlacementIds: [],
           activeView: "elevation",
+          savedCameraViews: [],
         },
       },
     }));
@@ -245,7 +265,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
       ui: {
         ...state.ui,
         [projectId]: {
-          ...state.ui[projectId],
+          ...ensurePlannerSelection(state.ui[projectId]),
           activeView: view,
         },
       },
@@ -255,7 +275,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
       ui: {
         ...state.ui,
         [projectId]: {
-          ...state.ui[projectId],
+          ...ensurePlannerSelection(state.ui[projectId]),
           selectedWallId: wallId,
           selectedOpeningId: undefined,
           selectedPlacementIds: [],
@@ -283,7 +303,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ui: {
           ...state.ui,
           [projectId]: {
-            ...state.ui[projectId],
+            ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: openingId,
             selectedWallId: opening?.wallId ?? state.ui[projectId]?.selectedWallId,
             selectedPlacementIds: [],
@@ -310,7 +330,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ui: {
           ...state.ui,
           [projectId]: {
-            ...state.ui[projectId],
+            ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: undefined,
             selectedPlacementIds: nextSelection,
             primaryPlacementId,
@@ -349,7 +369,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ui: {
           ...state.ui,
           [projectId]: {
-            ...state.ui[projectId],
+            ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: undefined,
             selectedArtworkId: artworkId,
             selectedPlacementIds: [],
@@ -400,7 +420,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ui: {
           ...state.ui,
           [projectId]: {
-            ...state.ui[projectId],
+            ...ensurePlannerSelection(state.ui[projectId]),
             selectedWallId: wallId,
             selectedOpeningId: openingId,
             selectedPlacementIds: [],
@@ -545,7 +565,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ui: {
           ...state.ui,
           [projectId]: {
-            ...state.ui[projectId],
+            ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: undefined,
             selectedArtworkId: artworkId,
             selectedWallId: nextSelectedWallId,
@@ -597,7 +617,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
       ui: {
         ...state.ui,
         [projectId]: {
-          ...state.ui[projectId],
+          ...ensurePlannerSelection(state.ui[projectId]),
           selectedOpeningId:
             state.ui[projectId]?.selectedOpeningId === openingId
               ? undefined
@@ -735,6 +755,54 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         };
       }),
     })),
+  saveCameraView: (projectId, view) => {
+    let savedId: string | undefined;
+
+    set((state) => {
+      const nextId = view.id ?? createId("camera-view");
+      savedId = nextId;
+      const currentUi = ensurePlannerSelection(state.ui[projectId]);
+      const nextView: SavedCameraView = {
+        id: nextId,
+        name: view.name,
+        position: view.position,
+        target: view.target,
+        wallId: view.wallId,
+      };
+      const savedCameraViews = [
+        currentUi.savedCameraViews.filter((entry) => entry.id !== nextId),
+        [nextView],
+      ].flat().slice(-8);
+
+      return {
+        ui: {
+          ...state.ui,
+          [projectId]: {
+            ...currentUi,
+            savedCameraViews,
+          },
+        },
+      };
+    });
+
+    return savedId;
+  },
+  deleteCameraView: (projectId, cameraViewId) =>
+    set((state) => {
+      const currentUi = ensurePlannerSelection(state.ui[projectId]);
+
+      return {
+        ui: {
+          ...state.ui,
+          [projectId]: {
+            ...currentUi,
+            savedCameraViews: currentUi.savedCameraViews.filter(
+              (entry) => entry.id !== cameraViewId,
+            ),
+          },
+        },
+      };
+    }),
 }));
 
 export function getProjectRouteSummary(bundle: ProjectBundle) {

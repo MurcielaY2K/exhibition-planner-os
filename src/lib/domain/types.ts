@@ -179,6 +179,14 @@ export type AlignmentMode =
 
 export type DistributionMode = "horizontal" | "vertical";
 
+export interface SavedCameraView {
+  id: string;
+  name: string;
+  position: [number, number, number];
+  target: [number, number, number];
+  wallId?: string;
+}
+
 export interface PlannerSelection {
   selectedRoomId: string;
   selectedWallId: string;
@@ -187,6 +195,7 @@ export interface PlannerSelection {
   selectedPlacementIds: string[];
   primaryPlacementId?: string;
   activeView: PlannerView;
+  savedCameraViews: SavedCameraView[];
 }
 
 export interface ProjectBundle {

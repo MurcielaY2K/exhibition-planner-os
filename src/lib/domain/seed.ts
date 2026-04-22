@@ -83,5 +83,6 @@ export const seedSelection: Record<string, PlannerSelection> = {
     selectedPlacementIds: ["placement-blue-interval"],
     primaryPlacementId: "placement-blue-interval",
     activeView: "elevation",
+    savedCameraViews: [],
   },
 };

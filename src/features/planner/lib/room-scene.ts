@@ -276,3 +276,54 @@ export function getWallFocusPreset(room: Room, wall: Wall): SceneCameraPreset {
     target: [-roomWidth / 2, targetY, 0],
   };
 }
+
+export function getPlacementFocusPreset(
+  room: Room,
+  wall: Wall,
+  placement: Placement,
+): SceneCameraPreset {
+  const placementData = getScenePlacementData(room, wall, placement, 80);
+  const offset = Math.max(placementData.width, placementData.height) * 1.4;
+
+  if (wall.index === 0) {
+    return {
+      position: [
+        placementData.position[0],
+        placementData.position[1] + placementData.height * 0.1,
+        placementData.position[2] + offset,
+      ],
+      target: [placementData.position[0], placementData.position[1], placementData.position[2]],
+    };
+  }
+
+  if (wall.index === 1) {
+    return {
+      position: [
+        placementData.position[0] - offset,
+        placementData.position[1] + placementData.height * 0.1,
+        placementData.position[2],
+      ],
+      target: [placementData.position[0], placementData.position[1], placementData.position[2]],
+    };
+  }
+
+  if (wall.index === 2) {
+    return {
+      position: [
+        placementData.position[0],
+        placementData.position[1] + placementData.height * 0.1,
+        placementData.position[2] - offset,
+      ],
+      target: [placementData.position[0], placementData.position[1], placementData.position[2]],
+    };
+  }
+
+  return {
+    position: [
+      placementData.position[0] + offset,
+      placementData.position[1] + placementData.height * 0.1,
+      placementData.position[2],
+    ],
+    target: [placementData.position[0], placementData.position[1], placementData.position[2]],
+  };
+}

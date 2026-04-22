@@ -12,8 +12,16 @@ import {
   HUMAN_REFERENCE_HEIGHT_MM,
   HUMAN_REFERENCE_WIDTH_MM,
 } from "@/lib/domain/scale-reference";
-import type { Artwork, Opening, Placement, Room, Wall } from "@/lib/domain/types";
+import type {
+  Artwork,
+  Opening,
+  Placement,
+  Room,
+  SavedCameraView,
+  Wall,
+} from "@/lib/domain/types";
 import {
+  getPlacementFocusPreset,
   getRoomOverviewPreset,
   getSceneOpeningData,
   getScenePlacementData,
@@ -23,7 +31,17 @@ import {
   WALL_THICKNESS_MM,
 } from "@/features/planner/lib/room-scene";
 
-type CameraIntent = "overview" | "wall";
+type CameraIntent = "overview" | "wall" | "artwork" | "saved";
+
+interface CameraSnapshot {
+  position: [number, number, number];
+  target: [number, number, number];
+  wallId?: string;
+}
+
+interface CameraRequest extends CameraSnapshot {
+  requestKey: string;
+}
 
 export function Room3DView({
   room,
@@ -33,8 +51,12 @@ export function Room3DView({
   artworks,
   selectedWallId,
   selectedPlacementIds,
+  primaryPlacementId,
+  savedCameraViews,
   onSelectWall,
   onSelectPlacement,
+  onSaveCameraView,
+  onDeleteCameraView,
 }: {
   room: Room;
   walls: Wall[];
@@ -43,96 +65,421 @@ export function Room3DView({
   artworks: Artwork[];
   selectedWallId?: string;
   selectedPlacementIds: string[];
+  primaryPlacementId?: string;
+  savedCameraViews: SavedCameraView[];
   onSelectWall: (wallId: string) => void;
   onSelectPlacement: (placementId: string, additive: boolean) => void;
+  onSaveCameraView: (
+    view: Omit<SavedCameraView, "id"> & { id?: string },
+  ) => string | undefined;
+  onDeleteCameraView: (cameraViewId: string) => void;
 }) {
-  const [cameraIntent, setCameraIntent] = useState<CameraIntent>("wall");
   const selectedWall = useMemo(
     () => walls.find((wall) => wall.id === selectedWallId) ?? null,
     [selectedWallId, walls],
   );
+  const primaryPlacement = useMemo(
+    () =>
+      placements.find((placement) => placement.id === primaryPlacementId) ?? null,
+    [placements, primaryPlacementId],
+  );
+  const primaryArtwork = useMemo(
+    () =>
+      artworks.find((artwork) => artwork.id === primaryPlacement?.artworkId) ?? null,
+    [artworks, primaryPlacement?.artworkId],
+  );
+  const cameraSnapshotRef = useRef<CameraSnapshot>({
+    ...getRoomOverviewPreset(room),
+    wallId: undefined,
+  });
+  const [cameraIntent, setCameraIntent] = useState<CameraIntent>("wall");
+  const [presentationMode, setPresentationMode] = useState(false);
+  const [saveViewName, setSaveViewName] = useState("");
+  const [cameraRequest, setCameraRequest] = useState<CameraRequest>(() => ({
+    ...getRoomOverviewPreset(room),
+    requestKey: "initial-overview",
+    wallId: undefined,
+  }));
+  const suggestedSaveViewName = useMemo(() => {
+    if (primaryArtwork && selectedWall) {
+      return `${selectedWall.name} / ${primaryArtwork.title}`;
+    }
+
+    if (selectedWall) {
+      return `${selectedWall.name} review`;
+    }
+
+    return "Room overview";
+  }, [primaryArtwork, selectedWall]);
+
+  useEffect(() => {
+    if (cameraIntent === "wall" && selectedWall) {
+      requestCamera(
+        {
+          ...getWallFocusPreset(room, selectedWall),
+          wallId: selectedWall.id,
+        },
+        "wall",
+      );
+    }
+  }, [cameraIntent, room, selectedWall]);
+
+  useEffect(() => {
+    if (cameraIntent !== "artwork" || !primaryPlacement) {
+      return;
+    }
+
+    const wall = walls.find((entry) => entry.id === primaryPlacement.wallId);
+
+    if (!wall) {
+      return;
+    }
+
+    requestCamera(
+      {
+        ...getPlacementFocusPreset(room, wall, primaryPlacement),
+        wallId: wall.id,
+      },
+      "artwork",
+    );
+  }, [cameraIntent, primaryPlacement, room, walls]);
+
+  function requestCamera(snapshot: CameraSnapshot, intent: CameraIntent) {
+    cameraSnapshotRef.current = snapshot;
+    setCameraIntent(intent);
+    setCameraRequest({
+      ...snapshot,
+      requestKey: crypto.randomUUID(),
+    });
+  }
+
+  function focusRoomOverview() {
+    requestCamera(
+      {
+        ...getRoomOverviewPreset(room),
+        wallId: undefined,
+      },
+      "overview",
+    );
+  }
+
+  function focusWall(wall: Wall | null) {
+    if (!wall) {
+      return;
+    }
+
+    onSelectWall(wall.id);
+    requestCamera(
+      {
+        ...getWallFocusPreset(room, wall),
+        wallId: wall.id,
+      },
+      "wall",
+    );
+  }
+
+  function focusPrimaryPlacement() {
+    if (!primaryPlacement) {
+      return;
+    }
+
+    const wall = walls.find((entry) => entry.id === primaryPlacement.wallId);
+
+    if (!wall) {
+      return;
+    }
+
+    onSelectWall(wall.id);
+    requestCamera(
+      {
+        ...getPlacementFocusPreset(room, wall, primaryPlacement),
+        wallId: wall.id,
+      },
+      "artwork",
+    );
+  }
+
+  function applySavedView(view: SavedCameraView) {
+    if (view.wallId) {
+      onSelectWall(view.wallId);
+    }
+
+    requestCamera(
+      {
+        position: view.position,
+        target: view.target,
+        wallId: view.wallId,
+      },
+      "saved",
+    );
+  }
+
+  function handleSaveCurrentView() {
+    const name =
+      saveViewName.trim() ||
+      suggestedSaveViewName ||
+      `Saved view ${savedCameraViews.length + 1}`;
+    onSaveCameraView({
+      name,
+      position: cameraSnapshotRef.current.position,
+      target: cameraSnapshotRef.current.target,
+      wallId: selectedWall?.id,
+    });
+  }
+
+  const shell = (
+    <SceneViewport
+      room={room}
+      walls={walls}
+      openings={openings}
+      placements={placements}
+      artworks={artworks}
+      selectedWall={selectedWall}
+      selectedPlacementIds={selectedPlacementIds}
+      cameraRequest={cameraRequest}
+      presentationMode={presentationMode}
+      onCameraSnapshot={(snapshot) => {
+        cameraSnapshotRef.current = snapshot;
+      }}
+      onSelectWall={onSelectWall}
+      onSelectPlacement={onSelectPlacement}
+    />
+  );
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
-      <div className="flex flex-col gap-4 border-b border-[var(--line)] px-4 py-4 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-            3D Room View
-          </p>
-          <h3 className="mt-1 text-lg font-semibold">{room.name}</h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted-strong)]">
-            The spatial viewer reads the same mm-based room, wall, placement, and
-            opening records as the 2D planner. Camera controls are tuned for quick
-            wall review, and you can always jump back to a clean overview.
-          </p>
-        </div>
-        <div className="grid gap-2 rounded-[18px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--foreground-soft)]">
-          <p>
-            Room: {formatDimension(room.widthMm)} x {formatDimension(room.depthMm)} x{" "}
-            {formatDimension(room.heightMm)}
-          </p>
-          <p>Selected wall: {selectedWall?.name ?? "None"}</p>
-          <p>Selected artworks: {selectedPlacementIds.length}</p>
-        </div>
-      </div>
-
-      <div className="grid gap-4 bg-[linear-gradient(180deg,rgba(15,21,28,0.92)_0%,rgba(11,16,21,0.88)_100%)] p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <ToolbarButton
-              label="Room overview"
-              isActive={cameraIntent === "overview"}
-              onClick={() => setCameraIntent("overview")}
-            />
-            <ToolbarButton
-              label={selectedWall ? `Focus ${selectedWall.name}` : "Focus wall"}
-              isActive={cameraIntent === "wall"}
-              disabled={!selectedWall}
-              onClick={() => setCameraIntent("wall")}
-            />
+    <>
+      <div className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
+        <div className="flex flex-col gap-4 border-b border-[var(--line)] px-4 py-4 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+              3D Room View
+            </p>
+            <h3 className="mt-1 text-lg font-semibold">{room.name}</h3>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--foreground-soft)]">
+              The 3D viewer is now optimized for review rather than freeform wandering:
+              jump between room, wall, and artwork views, store named camera positions,
+              and enter a clean presentation surface when you need to show the scheme.
+            </p>
           </div>
+          <div className="grid gap-2 rounded-[18px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--foreground-soft)]">
+            <p>
+              Room: {formatDimension(room.widthMm)} x {formatDimension(room.depthMm)} x{" "}
+              {formatDimension(room.heightMm)}
+            </p>
+            <p>Selected wall: {selectedWall?.name ?? "None"}</p>
+            <p>Selected artworks: {selectedPlacementIds.length}</p>
+            <p>Saved views: {savedCameraViews.length}</p>
+          </div>
+        </div>
 
-          <div className="h-[52svh] min-h-[360px] overflow-hidden rounded-[24px] border border-black/8 bg-[radial-gradient(circle_at_top,#ffffff_0%,#f0ebdf_65%,#e6dfd1_100%)] sm:h-[560px] lg:h-[620px]">
-            <Canvas
-              camera={{ position: getRoomOverviewPreset(room).position, fov: 34 }}
-              shadows
-            >
-              <color attach="background" args={["#f6f1e7"]} />
-              <fog attach="fog" args={["#f6f1e7", 7, 22]} />
-              <ambientLight intensity={0.78} />
-              <directionalLight position={[4, 5, 3]} intensity={1.1} color="#ffffff" />
-              <directionalLight position={[-2, 3, -4]} intensity={0.35} color="#f3ede0" />
-              <Suspense fallback={null}>
-                <SceneContent
-                  room={room}
-                  walls={walls}
-                  openings={openings}
-                  placements={placements}
-                  artworks={artworks}
-                  selectedWall={selectedWall}
-                  selectedPlacementIds={selectedPlacementIds}
-                  cameraIntent={cameraIntent}
-                  onSelectWall={onSelectWall}
-                  onSelectPlacement={onSelectPlacement}
+        <div className="grid gap-4 bg-[linear-gradient(180deg,rgba(15,21,28,0.92)_0%,rgba(11,16,21,0.88)_100%)] p-3 sm:p-4 lg:grid-cols-[minmax(0,1fr)_310px]">
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              <ToolbarButton
+                label="Room overview"
+                isActive={cameraIntent === "overview"}
+                onClick={focusRoomOverview}
+              />
+              <ToolbarButton
+                label={selectedWall ? `Focus ${selectedWall.name}` : "Focus wall"}
+                isActive={cameraIntent === "wall"}
+                disabled={!selectedWall}
+                onClick={() => focusWall(selectedWall)}
+              />
+              <ToolbarButton
+                label={primaryArtwork ? `Focus ${primaryArtwork.title}` : "Focus artwork"}
+                isActive={cameraIntent === "artwork"}
+                disabled={!primaryPlacement}
+                onClick={focusPrimaryPlacement}
+              />
+              <ToolbarButton
+                label="Presentation mode"
+                onClick={() => setPresentationMode(true)}
+              />
+            </div>
+
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {walls.map((wall) => (
+                <ToolbarButton
+                  key={wall.id}
+                  label={wall.name}
+                  isActive={selectedWall?.id === wall.id}
+                  onClick={() => focusWall(wall)}
                 />
-              </Suspense>
-            </Canvas>
+              ))}
+            </div>
+
+            {shell}
+          </div>
+
+          <div className="space-y-4">
+            <Card className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                Camera workflow
+              </p>
+              <h3 className="mt-2 text-lg font-semibold">Review controls</h3>
+              <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--foreground-soft)]">
+                <p>Jump to room, wall, and artwork views instead of navigating manually every time.</p>
+                <p>Desktop: left drag rotates, right drag pans, wheel zooms.</p>
+                <p>Mobile: one finger rotates, two fingers pan and zoom.</p>
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                Saved views
+              </p>
+              <h3 className="mt-2 text-lg font-semibold">Named camera positions</h3>
+              <div className="mt-4 grid gap-3">
+                <label className="grid gap-2">
+                  <span className="text-sm font-medium text-[var(--muted-strong)]">
+                    Save current camera as
+                  </span>
+                  <input
+                    className="w-full rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-strong)] focus:border-[var(--accent)] focus:bg-[var(--surface)]"
+                    value={saveViewName || suggestedSaveViewName}
+                    onChange={(event) => setSaveViewName(event.target.value)}
+                    placeholder={suggestedSaveViewName}
+                  />
+                </label>
+                <ToolbarButton label="Save current view" onClick={handleSaveCurrentView} />
+                {savedCameraViews.length === 0 ? (
+                  <p className="rounded-[16px] border border-dashed border-[var(--line)] px-4 py-4 text-sm text-[var(--muted-strong)]">
+                    No saved camera views yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {savedCameraViews.map((view) => (
+                      <div
+                        key={view.id}
+                        className="flex items-center justify-between gap-3 rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3"
+                      >
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => applySavedView(view)}
+                        >
+                          <p className="truncate text-sm font-medium text-[var(--foreground)]">
+                            {view.name}
+                          </p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+                            {view.wallId
+                              ? walls.find((wall) => wall.id === view.wallId)?.name ?? "Saved wall"
+                              : "Room view"}
+                          </p>
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
+                          onClick={() => onDeleteCameraView(view.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
         </div>
-
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-            Spatial context
-          </p>
-          <h3 className="mt-2 text-lg font-semibold">Navigation</h3>
-          <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--muted-strong)]">
-            <p>Use `Room overview` any time the camera feels lost.</p>
-            <p>Choose a wall in 2D or 3D and use `Focus wall` for a stable review angle.</p>
-            <p>Desktop: drag to orbit, right-drag to pan, wheel to zoom.</p>
-            <p>Mobile: one finger rotates, two fingers pan and zoom.</p>
-          </div>
-        </Card>
       </div>
+
+      {presentationMode ? (
+        <div className="fixed inset-0 z-50 bg-[rgba(5,8,12,0.96)] p-3 sm:p-5">
+          <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface-strong)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3 sm:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                  Presentation mode
+                </p>
+                <h3 className="mt-1 text-lg font-semibold">
+                  {selectedWall ? `${room.name} / ${selectedWall.name}` : room.name}
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <ToolbarButton label="Overview" onClick={focusRoomOverview} />
+                <ToolbarButton
+                  label={selectedWall ? `Focus ${selectedWall.name}` : "Focus wall"}
+                  disabled={!selectedWall}
+                  onClick={() => focusWall(selectedWall)}
+                />
+                <ToolbarButton
+                  label={primaryArtwork ? `Focus ${primaryArtwork.title}` : "Focus artwork"}
+                  disabled={!primaryPlacement}
+                  onClick={focusPrimaryPlacement}
+                />
+                <ToolbarButton
+                  label="Exit presentation"
+                  onClick={() => setPresentationMode(false)}
+                />
+              </div>
+            </div>
+            <div className="flex-1 p-3 sm:p-5">{shell}</div>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function SceneViewport({
+  room,
+  walls,
+  openings,
+  placements,
+  artworks,
+  selectedWall,
+  selectedPlacementIds,
+  cameraRequest,
+  presentationMode,
+  onCameraSnapshot,
+  onSelectWall,
+  onSelectPlacement,
+}: {
+  room: Room;
+  walls: Wall[];
+  openings: Opening[];
+  placements: Placement[];
+  artworks: Artwork[];
+  selectedWall: Wall | null;
+  selectedPlacementIds: string[];
+  cameraRequest: CameraRequest;
+  presentationMode: boolean;
+  onCameraSnapshot: (snapshot: CameraSnapshot) => void;
+  onSelectWall: (wallId: string) => void;
+  onSelectPlacement: (placementId: string, additive: boolean) => void;
+}) {
+  return (
+    <div
+      className={`overflow-hidden rounded-[24px] border border-[var(--line)] ${
+        presentationMode
+          ? "h-[calc(100vh-170px)] min-h-[420px]"
+          : "h-[56svh] min-h-[380px] sm:h-[620px]"
+      } bg-[radial-gradient(circle_at_top,rgba(245,248,251,0.16)_0%,rgba(12,18,25,0.2)_70%,rgba(5,8,12,0.3)_100%)]`}
+    >
+      <Canvas camera={{ position: getRoomOverviewPreset(room).position, fov: 34 }} shadows>
+        <color attach="background" args={presentationMode ? ["#0a1016"] : ["#101820"]} />
+        <fog attach="fog" args={presentationMode ? ["#0a1016", 8, 24] : ["#101820", 8, 22]} />
+        <ambientLight intensity={0.82} />
+        <directionalLight position={[4, 5, 3]} intensity={1.2} color="#ffffff" />
+        <directionalLight position={[-3, 2, -4]} intensity={0.4} color="#cfe4ed" />
+        <Suspense fallback={null}>
+          <SceneContent
+            room={room}
+            walls={walls}
+            openings={openings}
+            placements={placements}
+            artworks={artworks}
+            selectedWall={selectedWall}
+            selectedPlacementIds={selectedPlacementIds}
+            cameraRequest={cameraRequest}
+            onCameraSnapshot={onCameraSnapshot}
+            onSelectWall={onSelectWall}
+            onSelectPlacement={onSelectPlacement}
+          />
+        </Suspense>
+      </Canvas>
     </div>
   );
 }
@@ -145,7 +492,8 @@ function SceneContent({
   artworks,
   selectedWall,
   selectedPlacementIds,
-  cameraIntent,
+  cameraRequest,
+  onCameraSnapshot,
   onSelectWall,
   onSelectPlacement,
 }: {
@@ -156,7 +504,8 @@ function SceneContent({
   artworks: Artwork[];
   selectedWall: Wall | null;
   selectedPlacementIds: string[];
-  cameraIntent: CameraIntent;
+  cameraRequest: CameraRequest;
+  onCameraSnapshot: (snapshot: CameraSnapshot) => void;
   onSelectWall: (wallId: string) => void;
   onSelectPlacement: (placementId: string, additive: boolean) => void;
 }) {
@@ -193,26 +542,36 @@ function SceneContent({
   }, [room.depthMm, room.widthMm, selectedWall]);
 
   useEffect(() => {
-    const preset =
-      cameraIntent === "wall" && selectedWall
-        ? getWallFocusPreset(room, selectedWall)
-        : getRoomOverviewPreset(room);
-
-    camera.position.set(...preset.position);
-    controlsRef.current?.target.set(...preset.target);
-    camera.lookAt(...preset.target);
+    camera.position.set(...cameraRequest.position);
+    controlsRef.current?.target.set(...cameraRequest.target);
+    camera.lookAt(...cameraRequest.target);
     controlsRef.current?.update();
-  }, [camera, cameraIntent, room, selectedWall]);
+    onCameraSnapshot({
+      position: cameraRequest.position,
+      target: cameraRequest.target,
+      wallId: cameraRequest.wallId,
+    });
+  }, [camera, cameraRequest, onCameraSnapshot]);
+
+  function publishCameraSnapshot() {
+    const target = controlsRef.current?.target ?? new THREE.Vector3(0, 0, 0);
+
+    onCameraSnapshot({
+      position: [camera.position.x, camera.position.y, camera.position.z],
+      target: [target.x, target.y, target.z],
+      wallId: selectedWall?.id,
+    });
+  }
 
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
         <planeGeometry args={[floorWidth, floorDepth]} />
-        <meshStandardMaterial color="#ece6da" />
+        <meshStandardMaterial color="#111922" roughness={0.98} />
       </mesh>
 
       <gridHelper
-        args={[Math.max(floorWidth, floorDepth) * 1.4, 24, "#c7beb0", "#ddd4c7"]}
+        args={[Math.max(floorWidth, floorDepth) * 1.4, 24, "#31404d", "#1a2530"]}
         position={[0, 0.002, 0]}
       />
 
@@ -235,17 +594,17 @@ function SceneContent({
           >
             <mesh geometry={geometry} receiveShadow castShadow>
               <meshStandardMaterial
-                color={isSelected ? "#f7f3ea" : "#f1ebe0"}
+                color={isSelected ? "#dce8ef" : "#cfd8de"}
                 metalness={0}
                 roughness={0.96}
                 side={THREE.DoubleSide}
                 transparent
-                opacity={selectedWall && !isSelected ? 0.58 : 0.95}
+                opacity={selectedWall && !isSelected ? 0.44 : 0.92}
               />
             </mesh>
             <lineSegments>
               <edgesGeometry args={[geometry]} />
-              <lineBasicMaterial color={isSelected ? "#2b6152" : "#6f675b"} />
+              <lineBasicMaterial color={isSelected ? "#7ec5d6" : "#66727d"} />
             </lineSegments>
           </group>
         );
@@ -269,7 +628,7 @@ function SceneContent({
             {opening.type === "window" ? (
               <mesh>
                 <planeGeometry args={[data.width, data.height]} />
-                <meshStandardMaterial color="#acc2cf" transparent opacity={0.35} />
+                <meshStandardMaterial color="#8fb8c6" transparent opacity={0.32} />
               </mesh>
             ) : (
               <lineSegments>
@@ -282,7 +641,7 @@ function SceneContent({
                     ),
                   ]}
                 />
-                <lineBasicMaterial color="#8d8272" />
+                <lineBasicMaterial color="#87909a" />
               </lineSegments>
             )}
           </group>
@@ -314,20 +673,20 @@ function SceneContent({
             <mesh castShadow receiveShadow>
               <boxGeometry args={[data.width, data.height, data.depth]} />
               <meshStandardMaterial
-                color={isSelected ? "#2b6152" : "#e7dfd2"}
-                emissive={isSelected ? "#17352d" : "#000000"}
-                emissiveIntensity={isSelected ? 0.22 : 0}
+                color={isSelected ? "#7ec5d6" : "#d6dedf"}
+                emissive={isSelected ? "#0d2a31" : "#000000"}
+                emissiveIntensity={isSelected ? 0.25 : 0}
                 metalness={0}
                 roughness={0.92}
                 transparent
-                opacity={isActiveWall ? 1 : 0.68}
+                opacity={isActiveWall ? 1 : 0.62}
               />
             </mesh>
             <lineSegments>
               <edgesGeometry
                 args={[new THREE.BoxGeometry(data.width, data.height, data.depth)]}
               />
-              <lineBasicMaterial color={isSelected ? "#dfe9e5" : "#534b40"} />
+              <lineBasicMaterial color={isSelected ? "#f4f7fb" : "#4a5661"} />
             </lineSegments>
             {artwork.imageUrl ? (
               <ArtworkFrontPlane
@@ -345,15 +704,20 @@ function SceneContent({
         ref={controlsRef}
         makeDefault
         enableDamping
-        dampingFactor={0.08}
+        dampingFactor={0.09}
         screenSpacePanning
-        minDistance={1.5}
-        maxDistance={16}
-        minPolarAngle={Math.PI / 8}
+        minDistance={1.35}
+        maxDistance={18}
+        minPolarAngle={Math.PI / 10}
         maxPolarAngle={Math.PI / 2.02}
-        zoomSpeed={0.9}
-        panSpeed={0.85}
-        rotateSpeed={0.72}
+        zoomSpeed={0.88}
+        panSpeed={0.82}
+        rotateSpeed={0.68}
+        onEnd={publishCameraSnapshot}
+        touches={{
+          ONE: THREE.TOUCH.ROTATE,
+          TWO: THREE.TOUCH.DOLLY_PAN,
+        }}
       />
     </>
   );
@@ -386,7 +750,7 @@ function ScaleFigure({
   position: readonly [number, number, number];
 }) {
   const bodyColor = "#7ec5d6";
-  const bodyOpacity = 0.78;
+  const bodyOpacity = 0.8;
   const shoulderWidth = mmToSceneUnits(HUMAN_REFERENCE_WIDTH_MM);
   const bodyDepth = mmToSceneUnits(HUMAN_REFERENCE_DEPTH_MM);
   const height = mmToSceneUnits(HUMAN_REFERENCE_HEIGHT_MM);

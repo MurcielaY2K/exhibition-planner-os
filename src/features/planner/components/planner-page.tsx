@@ -93,6 +93,8 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     updatePlacement,
     updatePlacements,
     autoSequenceWallPlacements,
+    saveCameraView,
+    deleteCameraView,
   } = useProjectPlanner(projectId);
   const [actionGuides, setActionGuides] = useState<VisualGuide[]>([]);
   const [includeCoverPage, setIncludeCoverPage] = useState(true);
@@ -933,9 +935,15 @@ export function PlannerPage({ projectId }: { projectId: string }) {
               artworks={bundle.artworks}
               selectedWallId={selectedWall?.id}
               selectedPlacementIds={ui.selectedPlacementIds}
+              primaryPlacementId={ui.primaryPlacementId}
+              savedCameraViews={ui.savedCameraViews}
               onSelectWall={(wallId) => selectWall(projectId, wallId)}
               onSelectPlacement={(placementId, additive) =>
                 selectPlacement(projectId, placementId, additive)
+              }
+              onSaveCameraView={(view) => saveCameraView(projectId, view)}
+              onDeleteCameraView={(cameraViewId) =>
+                deleteCameraView(projectId, cameraViewId)
               }
             />
           ) : null}
@@ -1486,6 +1494,8 @@ function useProjectPlanner(projectId: string) {
       updatePlacement: state.updatePlacement,
       updatePlacements: state.updatePlacements,
       autoSequenceWallPlacements: state.autoSequenceWallPlacements,
+      saveCameraView: state.saveCameraView,
+      deleteCameraView: state.deleteCameraView,
     })),
   );
 }
