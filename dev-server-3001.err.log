@@ -1,0 +1,388 @@
+[browser] The result of getSnapshot should be cached to avoid an infinite loop 
+    at useProjectPlanner (src/features/planner/components/planner-page.tsx:433:28)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:41:7)
+  431 |
+  432 | function useProjectPlanner(projectId: string) {
+> 433 |   return useExhibitionStore((state) => ({
+      |                            ^
+  434 |     bundle: getProjectBundle(state.projects, projectId),
+  435 |     ui: state.ui[projectId],
+  436 |     updateRoom: state.updateRoom, (src/features/planner/components/planner-page.tsx:433:28)
+[browser] Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. 
+[browser] Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+   8 |   const { projectId } = await params;
+   9 |
+> 10 |   return <PlannerPage projectId={projectId} />;
+     |          ^
+  11 | }
+  12 |
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+
+Previous: [[object Object], project-autumn-2026, [object Object], [object Object], [object Object], placement-blue-interval, (projectId, patches)=>set((state)=>({
+                    projects: state.projects.map((bundle)=>{
+                        if (bundle.project.id !== projectId) {
+                            return bundle;
+                        }
+                        return {
+                            ...bundle,
+                            placements: bundle.placements.map((placement)=>{
+                                const patch = patches.find((entry)=>entry.id === placement.id);
+                                if (!patch) {
+                                    return placement;
+                                }
+                                const wall = bundle.walls.find((entry)=>entry.id === placement.wallId);
+                                if (!wall) {
+                                    return placement;
+                                }
+                                return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$domain$2f$placement$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["clampPlacementToWall"])({
+                                    ...placement,
+                                    xMm: patch.xMm,
+                                    yMm: patch.yMm
+                                }, wall);
+                            })
+                        };
+                    })
+                })), [object Object]]
+Incoming: [[object Object], project-autumn-2026, [object Object], [object Object], [object Object], placement-blue-interval, (projectId, patches)=>set((state)=>({
+                    projects: state.projects.map((bundle)=>{
+                        if (bundle.project.id !== projectId) {
+                            return bundle;
+                        }
+                        return {
+                            ...bundle,
+                            placements: bundle.placements.map((placement)=>{
+                                const patch = patches.find((entry)=>entry.id === placement.id);
+                                if (!patch) {
+                                    return placement;
+                                }
+                                const wall = bundle.walls.find((entry)=>entry.id === placement.wallId);
+                                if (!wall) {
+                                    return placement;
+                                }
+                                return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$domain$2f$placement$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["clampPlacementToWall"])({
+                                    ...placement,
+                                    xMm: patch.xMm,
+                                    yMm: patch.yMm
+                                }, wall);
+                            })
+                        };
+                    })
+                })), , [object Object]] 
+    at PlannerPage (src/features/planner/components/planner-page.tsx:195:12)
+    at Set.forEach (<anonymous>)
+  193 |   }
+  194 |
+> 195 |   useEffect(() => {
+      |            ^
+  196 |     function handleKeyDown(event: KeyboardEvent) {
+  197 |       if (!bundle || !ui || !selectedWall || selectedPlacements.length === 0) {
+  198 |         return; (src/features/planner/components/planner-page.tsx:195:12)
+[browser] The final argument passed to useEffect changed size between renders. The order and size of this array must remain constant.
+
+Previous: [[object Object], project-autumn-2026, [object Object], [object Object], [object Object], placement-blue-interval, (projectId, patches)=>set((state)=>({
+                    projects: state.projects.map((bundle)=>{
+                        if (bundle.project.id !== projectId) {
+                            return bundle;
+                        }
+                        return {
+                            ...bundle,
+                            placements: bundle.placements.map((placement)=>{
+                                const patch = patches.find((entry)=>entry.id === placement.id);
+                                if (!patch) {
+                                    return placement;
+                                }
+                                const wall = bundle.walls.find((entry)=>entry.id === placement.wallId);
+                                if (!wall) {
+                                    return placement;
+                                }
+                                return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$domain$2f$placement$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["clampPlacementToWall"])({
+                                    ...placement,
+                                    xMm: patch.xMm,
+                                    yMm: patch.yMm
+                                }, wall);
+                            })
+                        };
+                    })
+                })), [object Object]]
+Incoming: [[object Object], project-autumn-2026, [object Object], [object Object], [object Object], placement-blue-interval, (projectId, patches)=>set((state)=>({
+                    projects: state.projects.map((bundle)=>{
+                        if (bundle.project.id !== projectId) {
+                            return bundle;
+                        }
+                        return {
+                            ...bundle,
+                            placements: bundle.placements.map((placement)=>{
+                                const patch = patches.find((entry)=>entry.id === placement.id);
+                                if (!patch) {
+                                    return placement;
+                                }
+                                const wall = bundle.walls.find((entry)=>entry.id === placement.wallId);
+                                if (!wall) {
+                                    return placement;
+                                }
+                                return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$domain$2f$placement$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["clampPlacementToWall"])({
+                                    ...placement,
+                                    xMm: patch.xMm,
+                                    yMm: patch.yMm
+                                }, wall);
+                            })
+                        };
+                    })
+                })), , [object Object]] 
+    at PlannerPage (src/features/planner/components/planner-page.tsx:195:12)
+    at Set.forEach (<anonymous>)
+  193 |   }
+  194 |
+> 195 |   useEffect(() => {
+      |            ^
+  196 |     function handleKeyDown(event: KeyboardEvent) {
+  197 |       if (!bundle || !ui || !selectedWall || selectedPlacements.length === 0) {
+  198 |         return; (src/features/planner/components/planner-page.tsx:195:12)
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at Set.forEach (<anonymous>)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: buildPlacementLabelMap is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:132:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:131:36)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo( {
+  digest: '2879567634'
+}
+[browser] Uncaught ReferenceError: buildPlacementLabelMap is not defined
+    at PlannerPage.useMemo[placementLabelMap] (src/features/planner/components/planner-page.tsx:132:11)
+    at PlannerPage (src/features/planner/components/planner-page.tsx:131:36)
+    at PlannerRoute (src\app\projects\[projectId]\planner\page.tsx:10:10)
+  130 |   );
+  131 |   const placementLabelMap = useMemo(
+> 132 |     () => buildPlacementLabelMap(wallPlacements),
+      |           ^
+  133 |     [wallPlacements],
+  134 |   );
+  135 |   const wallOpenings = useMemo(
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: summarizeInstallationChecks is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:195:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:194:43)
+  193 |   ).length;
+  194 |   const selectedValidationChecks = useMemo(
+> 195 |     () => summarizeInstallationChecks(selectedDrillWarnings),
+      |           ^
+  196 |     [selectedDrillWarnings],
+  197 |   );
+  198 | {
+  digest: '3525902072'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⨯ ReferenceError: summarizeInstallationChecks is not defined
+    at <unknown> (src\features\planner\components\planner-page.tsx:195:11)
+    at PlannerPage (src\features\planner\components\planner-page.tsx:194:43)
+  193 |   ).length;
+  194 |   const selectedValidationChecks = useMemo(
+> 195 |     () => summarizeInstallationChecks(selectedDrillWarnings),
+      |           ^
+  196 |     [selectedDrillWarnings],
+  197 |   );
+  198 | {
+  digest: '3525902072'
+}
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
