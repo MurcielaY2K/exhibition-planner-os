@@ -12,7 +12,7 @@ export function Field({
   return (
     <label className="grid gap-2">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-[var(--muted-strong)]">
+        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
           {label}
         </span>
         {hint ? (
@@ -27,4 +27,4 @@ export function Field({
 }
 
 export const inputClassName =
-  "w-full rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-strong)] focus:border-[var(--accent)] focus:bg-[var(--surface)]";
+  "w-full rounded-[14px] border border-[var(--line)] bg-[rgba(21,30,40,0.9)] px-4 py-3 text-sm text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-strong)] focus:border-[var(--accent)] focus:bg-[var(--surface)]";

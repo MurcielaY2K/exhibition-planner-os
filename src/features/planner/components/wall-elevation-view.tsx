@@ -12,9 +12,9 @@ import {
   getPlacementGroupBounds,
   getPlacementHangingPoints,
   getPlacementValidation,
-  visualGuidesFromSnapGuides,
   snapPlacementOnWall,
   translatePlacement,
+  visualGuidesFromSnapGuides,
 } from "@/lib/domain/placement";
 import {
   formatArtworkSize,
@@ -59,6 +59,8 @@ const DRILL_POINT_RADIUS_MM = 14;
 const DRILL_POINT_HALO_RADIUS_MM = 26;
 const WARNING_COLOR = "#b7791f";
 const ERROR_COLOR = "#8f3931";
+const DEFAULT_DRILL_COLOR = "#d6dfeb";
+const SELECTED_DRILL_COLOR = "#5fa9c1";
 const SCALE_REFERENCE_INSET_MM = 180;
 
 export function WallElevationView({
@@ -189,22 +191,22 @@ export function WallElevationView({
   }
 
   return (
-    <div className="overflow-hidden rounded-[28px] border border-[var(--line)] bg-[var(--surface)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
-      <div className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
+    <div className="overflow-hidden rounded-[24px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(14,20,27,0.96)_0%,rgba(10,15,20,0.96)_100%)] shadow-[0_24px_70px_rgba(0,0,0,0.3)]">
+      <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4 sm:px-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-            Wall Elevation
+            Wall
           </p>
           <h3 className="mt-1 text-lg font-semibold">{wall.name}</h3>
         </div>
-        <p className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1 text-sm text-[var(--foreground-soft)]">
+        <p className="rounded-[14px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-3 py-2 text-sm text-[var(--foreground-soft)]">
           {formatDimension(wall.lengthMm)} L / {formatDimension(wall.heightMm)} H
         </p>
       </div>
 
       <svg
         ref={svgRef}
-        className="block h-[52svh] min-h-[360px] w-full bg-[linear-gradient(180deg,#faf8f3_0%,#f2ece2_100%)] sm:h-[560px]"
+        className="block h-[48svh] min-h-[340px] w-full bg-[linear-gradient(180deg,#121a23_0%,#0d1319_100%)] sm:h-[520px]"
         viewBox={`0 0 ${wall.lengthMm} ${wall.heightMm}`}
         onPointerMove={(event) => updateDrag(event.clientX, event.clientY)}
         onPointerUp={finishDrag}
@@ -215,7 +217,7 @@ export function WallElevationView({
           x2={wall.lengthMm}
           y1={standardCenterlineY}
           y2={standardCenterlineY}
-          stroke="rgba(43, 97, 82, 0.45)"
+          stroke="rgba(95, 169, 193, 0.34)"
           strokeWidth={18}
           strokeDasharray="120 80"
         />
@@ -224,7 +226,7 @@ export function WallElevationView({
           y={standardCenterlineY - 46}
           fontSize={96}
           textAnchor="end"
-          fill="rgba(43, 97, 82, 0.92)"
+          fill="rgba(214,223,235,0.9)"
         >
           Standard centerline {formatMillimeters(STANDARD_CENTERLINE_MM)}
         </text>
@@ -237,7 +239,7 @@ export function WallElevationView({
               x2={guide.coordinateMm}
               y1={0}
               y2={wall.heightMm}
-              stroke="rgba(28, 59, 84, 0.62)"
+              stroke="rgba(95, 169, 193, 0.46)"
               strokeWidth={14}
               strokeDasharray="80 70"
             />
@@ -248,7 +250,7 @@ export function WallElevationView({
               x2={wall.lengthMm}
               y1={wall.heightMm - guide.coordinateMm}
               y2={wall.heightMm - guide.coordinateMm}
-              stroke="rgba(28, 59, 84, 0.62)"
+              stroke="rgba(95, 169, 193, 0.46)"
               strokeWidth={14}
               strokeDasharray="80 70"
             />
@@ -262,14 +264,14 @@ export function WallElevationView({
               x2={wall.lengthMm}
               y1={wall.heightMm - mark}
               y2={wall.heightMm - mark}
-              stroke="rgba(47, 43, 37, 0.07)"
+              stroke="rgba(214, 223, 235, 0.07)"
               strokeWidth={16}
             />
             <text
               x={120}
               y={wall.heightMm - mark - 48}
               fontSize={110}
-              fill="rgba(66, 60, 52, 0.52)"
+              fill="rgba(135, 151, 170, 0.52)"
             >
               {formatDimension(mark)}
             </text>
@@ -283,7 +285,7 @@ export function WallElevationView({
             x2={mark}
             y1={0}
             y2={wall.heightMm}
-            stroke="rgba(47, 43, 37, 0.05)"
+            stroke="rgba(214, 223, 235, 0.04)"
             strokeWidth={12}
           />
         ))}
@@ -293,7 +295,7 @@ export function WallElevationView({
           x2={wall.lengthMm}
           y1={wall.heightMm}
           y2={wall.heightMm}
-          stroke="rgba(47, 43, 37, 0.18)"
+          stroke="rgba(214, 223, 235, 0.16)"
           strokeWidth={28}
         />
 
@@ -302,8 +304,8 @@ export function WallElevationView({
             cx={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2}
             cy={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 120}
             r={112}
-            fill="rgba(28,59,84,0.08)"
-            stroke="rgba(28,59,84,0.34)"
+            fill="rgba(95,169,193,0.06)"
+            stroke="rgba(95,169,193,0.24)"
             strokeWidth={18}
           />
           <rect
@@ -312,8 +314,8 @@ export function WallElevationView({
             width={236}
             height={560}
             rx={118}
-            fill="rgba(28,59,84,0.08)"
-            stroke="rgba(28,59,84,0.34)"
+            fill="rgba(95,169,193,0.06)"
+            stroke="rgba(95,169,193,0.24)"
             strokeWidth={18}
           />
           <line
@@ -321,7 +323,7 @@ export function WallElevationView({
             x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 - 46}
             y1={wall.heightMm - 40}
             y2={wall.heightMm - 560}
-            stroke="rgba(28,59,84,0.38)"
+            stroke="rgba(95,169,193,0.28)"
             strokeWidth={24}
             strokeLinecap="round"
           />
@@ -330,7 +332,7 @@ export function WallElevationView({
             x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 + 46}
             y1={wall.heightMm - 40}
             y2={wall.heightMm - 560}
-            stroke="rgba(28,59,84,0.38)"
+            stroke="rgba(95,169,193,0.28)"
             strokeWidth={24}
             strokeLinecap="round"
           />
@@ -339,7 +341,7 @@ export function WallElevationView({
             x2={scaleReferenceX + HUMAN_REFERENCE_WIDTH_MM / 2 + 220}
             y1={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 500}
             y2={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM + 620}
-            stroke="rgba(28,59,84,0.34)"
+            stroke="rgba(95,169,193,0.22)"
             strokeWidth={22}
             strokeLinecap="round"
           />
@@ -348,7 +350,7 @@ export function WallElevationView({
             y={wall.heightMm - HUMAN_REFERENCE_HEIGHT_MM - 34}
             fontSize={84}
             textAnchor="middle"
-            fill="rgba(28,59,84,0.78)"
+            fill="rgba(135,151,170,0.72)"
           >
             {HUMAN_REFERENCE_LABEL}
           </text>
@@ -360,10 +362,12 @@ export function WallElevationView({
           const isSelected = opening.id === selectedOpeningId;
           const fill =
             opening.type === "door"
-              ? "rgba(250, 248, 243, 0.94)"
-              : "rgba(199, 220, 235, 0.45)";
+              ? "rgba(10,15,20,0.65)"
+              : "rgba(95,169,193,0.14)";
           const stroke =
-            opening.type === "door" ? "rgba(78, 70, 61, 0.72)" : "rgba(28,59,84,0.78)";
+            opening.type === "door"
+              ? "rgba(214,223,235,0.42)"
+              : "rgba(95,169,193,0.72)";
 
           return (
             <g key={opening.id} onPointerDown={() => onSelectOpening(opening.id)}>
@@ -385,7 +389,7 @@ export function WallElevationView({
                     x2={box.rightMm}
                     y1={topY + box.heightMm / 2}
                     y2={topY + box.heightMm / 2}
-                    stroke="rgba(28,59,84,0.55)"
+                    stroke="rgba(95,169,193,0.55)"
                     strokeWidth={12}
                   />
                   <line
@@ -393,7 +397,7 @@ export function WallElevationView({
                     x2={box.leftMm + box.widthMm / 2}
                     y1={topY}
                     y2={topY + box.heightMm}
-                    stroke="rgba(28,59,84,0.55)"
+                    stroke="rgba(95,169,193,0.55)"
                     strokeWidth={12}
                   />
                 </>
@@ -403,7 +407,7 @@ export function WallElevationView({
                   x2={box.rightMm}
                   y1={wall.heightMm}
                   y2={wall.heightMm}
-                  stroke="rgba(78, 70, 61, 0.8)"
+                  stroke="rgba(214,223,235,0.46)"
                   strokeWidth={20}
                 />
               )}
@@ -414,7 +418,7 @@ export function WallElevationView({
                   width={box.widthMm + 56}
                   height={box.heightMm + 56}
                   fill="none"
-                  stroke="#2b6152"
+                  stroke="#5fa9c1"
                   strokeWidth={12}
                   strokeDasharray="90 50"
                 />
@@ -423,7 +427,7 @@ export function WallElevationView({
                 x={box.leftMm + 80}
                 y={topY + 150}
                 fontSize={96}
-                fill="rgba(48,43,37,0.8)"
+                fill="rgba(214,223,235,0.76)"
               >
                 {opening.label ?? (opening.type === "door" ? "Door" : "Window")}
               </text>
@@ -452,15 +456,15 @@ export function WallElevationView({
           const centerlineY = wall.heightMm - getPlacementCenterlineMm(placement);
           const isInvalid = !validation.isValid;
           const fill = isInvalid
-            ? "rgba(143, 57, 49, 0.16)"
+            ? "rgba(143,57,49,0.16)"
             : isSelected
-              ? "rgba(43, 97, 82, 0.2)"
-              : "rgba(36, 33, 28, 0.12)";
+              ? "rgba(95,169,193,0.16)"
+              : "rgba(214,223,235,0.06)";
           const stroke = isInvalid
             ? "#8f3931"
             : isSelected
-              ? "#2b6152"
-              : "rgba(36, 33, 28, 0.4)";
+              ? "#5fa9c1"
+              : "rgba(214,223,235,0.26)";
 
           return (
             <g
@@ -496,6 +500,7 @@ export function WallElevationView({
                 if (!selectedPlacementIds.includes(placement.id)) {
                   onSelectPlacement(placement.id, false);
                 }
+
                 event.currentTarget.setPointerCapture(event.pointerId);
                 setDragState({
                   anchorPlacementId: placement.id,
@@ -522,7 +527,7 @@ export function WallElevationView({
                     width={box.widthMm + 72}
                     height={box.heightMm + 72}
                     fill="none"
-                    stroke={isInvalid ? "#8f3931" : "#2b6152"}
+                    stroke={isInvalid ? "#8f3931" : "#5fa9c1"}
                     strokeWidth={14}
                     strokeDasharray="90 50"
                   />
@@ -531,7 +536,7 @@ export function WallElevationView({
                     x2={box.leftMm}
                     y1={0}
                     y2={wall.heightMm}
-                    stroke="rgba(28, 59, 84, 0.2)"
+                    stroke="rgba(95,169,193,0.2)"
                     strokeWidth={12}
                     strokeDasharray="90 70"
                   />
@@ -540,7 +545,7 @@ export function WallElevationView({
                     x2={box.rightMm}
                     y1={0}
                     y2={wall.heightMm}
-                    stroke="rgba(28, 59, 84, 0.2)"
+                    stroke="rgba(95,169,193,0.2)"
                     strokeWidth={12}
                     strokeDasharray="90 70"
                   />
@@ -549,19 +554,20 @@ export function WallElevationView({
                     x2={wall.lengthMm}
                     y1={centerlineY}
                     y2={centerlineY}
-                    stroke="rgba(28, 59, 84, 0.2)"
+                    stroke="rgba(95,169,193,0.2)"
                     strokeWidth={12}
                     strokeDasharray="90 70"
                   />
                 </>
               ) : null}
+
               <rect
                 x={placement.xMm}
                 y={topY}
                 width={placement.widthMm}
                 height={placement.heightMm}
                 rx={42}
-                fill={artwork.imageUrl ? "rgba(10,14,18,0.92)" : fill}
+                fill={artwork.imageUrl ? "rgba(10,14,18,0.88)" : fill}
                 style={{
                   cursor: placement.isLocked
                     ? "not-allowed"
@@ -570,6 +576,7 @@ export function WallElevationView({
                       : "grab",
                 }}
               />
+
               {artwork.imageUrl ? (
                 <>
                   <defs>
@@ -593,7 +600,7 @@ export function WallElevationView({
                     clipPath={`url(#artwork-preview-${placement.id})`}
                     opacity={isInvalid ? 0.36 : 0.94}
                   />
-                  {(isSelected || isInvalid) ? (
+                  {isSelected || isInvalid ? (
                     <rect
                       x={placement.xMm}
                       y={topY}
@@ -608,7 +615,7 @@ export function WallElevationView({
                     y={topY + placement.heightMm - 260}
                     width={placement.widthMm}
                     height={260}
-                    fill="rgba(8,11,16,0.8)"
+                    fill="rgba(8,11,16,0.82)"
                     clipPath={`url(#artwork-preview-${placement.id})`}
                   />
                   <text
@@ -623,9 +630,10 @@ export function WallElevationView({
                     x={placement.xMm + 90}
                     y={topY + placement.heightMm - 40}
                     fontSize={74}
-                    fill="rgba(214,223,235,0.92)"
+                    fill="rgba(214,223,235,0.88)"
                   >
-                    {artwork.artist} / {formatArtworkSize(placement.widthMm, placement.heightMm)}
+                    {artwork.artist} /{" "}
+                    {formatArtworkSize(placement.widthMm, placement.heightMm)}
                   </text>
                 </>
               ) : (
@@ -634,7 +642,7 @@ export function WallElevationView({
                     x={placement.xMm + 90}
                     y={topY + 150}
                     fontSize={110}
-                    fill="#17120d"
+                    fill="rgba(244,247,251,0.94)"
                   >
                     {artwork.title}
                   </text>
@@ -642,12 +650,13 @@ export function WallElevationView({
                     x={placement.xMm + 90}
                     y={topY + 286}
                     fontSize={90}
-                    fill="rgba(48, 43, 37, 0.76)"
+                    fill="rgba(198,210,225,0.78)"
                   >
                     {formatArtworkSize(placement.widthMm, placement.heightMm)}
                   </text>
                 </>
               )}
+
               <rect
                 x={placement.xMm}
                 y={topY}
@@ -658,6 +667,7 @@ export function WallElevationView({
                 stroke={stroke}
                 strokeWidth={isSelected ? 28 : 18}
               />
+
               {hangingPoints.map((point) => {
                 const pointY = wall.heightMm - point.yMm;
                 const pointWarnings = drillWarnings.filter(
@@ -668,16 +678,16 @@ export function WallElevationView({
                   ? ERROR_COLOR
                   : highestSeverity === "warning"
                     ? WARNING_COLOR
-                  : isSelected
-                    ? "#1c3b54"
-                    : "rgba(36, 33, 28, 0.68)";
+                    : isSelected
+                      ? SELECTED_DRILL_COLOR
+                      : DEFAULT_DRILL_COLOR;
                 const markerFill = highestSeverity === "error"
                   ? ERROR_COLOR
                   : highestSeverity === "warning"
                     ? WARNING_COLOR
-                  : isSelected
-                    ? "#1c3b54"
-                    : "rgba(36, 33, 28, 0.84)";
+                    : isSelected
+                      ? SELECTED_DRILL_COLOR
+                      : DEFAULT_DRILL_COLOR;
 
                 return (
                   <g key={`${placement.id}-${point.label}`}>
@@ -685,7 +695,7 @@ export function WallElevationView({
                       cx={point.xMm}
                       cy={pointY}
                       r={DRILL_POINT_HALO_RADIUS_MM}
-                      fill="rgba(255,255,255,0.94)"
+                      fill="rgba(255,255,255,0.96)"
                       stroke={markerStroke}
                       strokeWidth={4}
                     />
@@ -735,7 +745,7 @@ export function WallElevationView({
                           textAnchor="middle"
                           fill="#ffffff"
                         >
-                          ⚠
+                          !
                         </text>
                       </>
                     ) : null}
@@ -750,7 +760,7 @@ export function WallElevationView({
                               ? "rgba(143,57,49,0.92)"
                               : highestSeverity === "warning"
                                 ? "rgba(176,121,31,0.92)"
-                                : "rgba(28,59,84,0.88)"
+                                : "rgba(214,223,235,0.9)"
                           }
                         >
                           {point.label}
@@ -764,7 +774,7 @@ export function WallElevationView({
                               ? "rgba(143,57,49,0.92)"
                               : highestSeverity === "warning"
                                 ? "rgba(176,121,31,0.92)"
-                                : "rgba(28,59,84,0.82)"
+                                : "rgba(198,210,225,0.82)"
                           }
                         >
                           L {formatDimension(point.xMm)} / H {formatDimension(point.yMm)}
@@ -774,6 +784,7 @@ export function WallElevationView({
                   </g>
                 );
               })}
+
               {drillWarnings.length > 0 ? (
                 <g>
                   <circle
@@ -789,20 +800,22 @@ export function WallElevationView({
                     textAnchor="middle"
                     fill="#ffffff"
                   >
-                    ⚠
+                    !
                   </text>
                 </g>
               ) : null}
+
               {placement.isLocked ? (
                 <text
                   x={placement.xMm + 90}
                   y={topY + placement.heightMm - 70}
                   fontSize={78}
-                  fill="rgba(36, 33, 28, 0.78)"
+                  fill="rgba(198,210,225,0.76)"
                 >
                   LOCKED
                 </text>
               ) : null}
+
               {isSelected ? (
                 <>
                   <line
@@ -810,7 +823,7 @@ export function WallElevationView({
                     x2={box.rightMm}
                     y1={wall.heightMm - box.bottomMm + 110}
                     y2={wall.heightMm - box.bottomMm + 110}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <line
@@ -818,7 +831,7 @@ export function WallElevationView({
                     x2={box.leftMm}
                     y1={wall.heightMm - box.bottomMm + 64}
                     y2={wall.heightMm - box.bottomMm + 156}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <line
@@ -826,7 +839,7 @@ export function WallElevationView({
                     x2={box.rightMm}
                     y1={wall.heightMm - box.bottomMm + 64}
                     y2={wall.heightMm - box.bottomMm + 156}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <text
@@ -834,7 +847,7 @@ export function WallElevationView({
                     y={wall.heightMm - box.bottomMm + 260}
                     fontSize={88}
                     textAnchor="middle"
-                    fill="#1c3b54"
+                    fill="rgba(214,223,235,0.9)"
                   >
                     Width {formatMillimeters(placement.widthMm)}
                   </text>
@@ -844,7 +857,7 @@ export function WallElevationView({
                     x2={box.rightMm + 120}
                     y1={wall.heightMm - box.topMm}
                     y2={wall.heightMm - box.bottomMm}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <line
@@ -852,7 +865,7 @@ export function WallElevationView({
                     x2={box.rightMm + 164}
                     y1={wall.heightMm - box.topMm}
                     y2={wall.heightMm - box.topMm}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <line
@@ -860,14 +873,14 @@ export function WallElevationView({
                     x2={box.rightMm + 164}
                     y1={wall.heightMm - box.bottomMm}
                     y2={wall.heightMm - box.bottomMm}
-                    stroke="#1c3b54"
+                    stroke="#5fa9c1"
                     strokeWidth={12}
                   />
                   <text
                     x={box.rightMm + 206}
                     y={wall.heightMm - (box.bottomMm + box.heightMm / 2)}
                     fontSize={88}
-                    fill="#1c3b54"
+                    fill="rgba(214,223,235,0.9)"
                   >
                     Height {formatMillimeters(placement.heightMm)}
                   </text>
@@ -876,7 +889,7 @@ export function WallElevationView({
                     x={box.leftMm}
                     y={wall.heightMm - box.bottomMm - 40}
                     fontSize={84}
-                    fill="rgba(28,59,84,0.92)"
+                    fill="rgba(214,223,235,0.92)"
                   >
                     x {formatMillimeters(placement.xMm)} / y {formatMillimeters(placement.yMm)}
                   </text>

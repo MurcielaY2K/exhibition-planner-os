@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #05080c;
-  --background-raised: #0a0f15;
-  --surface: #0d1319;
-  --surface-muted: #111922;
-  --surface-soft: #18222d;
-  --surface-strong: #0b1015;
-  --line: rgba(196, 208, 224, 0.12);
-  --line-strong: rgba(196, 208, 224, 0.2);
+  --background: #060b10;
+  --background-raised: #0a1118;
+  --surface: #0d141c;
+  --surface-muted: #121b25;
+  --surface-soft: #182430;
+  --surface-strong: #0b1117;
+  --line: rgba(197, 210, 225, 0.1);
+  --line-strong: rgba(197, 210, 225, 0.18);
   --foreground: #f4f7fb;
-  --foreground-soft: #d6dfeb;
-  --muted-strong: #91a1b4;
-  --accent: #7ec5d6;
-  --accent-strong: #63aebf;
+  --foreground-soft: #c6d2df;
+  --muted-strong: #8797aa;
+  --accent: #4d8ea3;
+  --accent-strong: #5fa9c1;
   --danger: #ff7b72;
   --warning: #f0b95f;
 }
@@ -37,9 +37,9 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(126, 197, 214, 0.14), transparent 26%),
-    radial-gradient(circle at top right, rgba(110, 132, 163, 0.16), transparent 28%),
-    linear-gradient(180deg, #071018 0%, #05080c 100%);
+    radial-gradient(circle at top left, rgba(77, 142, 163, 0.16), transparent 24%),
+    radial-gradient(circle at top right, rgba(120, 140, 162, 0.12), transparent 26%),
+    linear-gradient(180deg, #071018 0%, #060b10 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
 }
@@ -58,4 +58,23 @@ img {
 
 ::selection {
   background: rgba(126, 197, 214, 0.26);
+}
+
+.scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(135, 151, 170, 0.34) transparent;
+}
+
+.scrollbar-subtle::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.scrollbar-subtle::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-subtle::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(135, 151, 170, 0.28);
 }

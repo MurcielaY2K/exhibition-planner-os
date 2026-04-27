@@ -212,14 +212,6 @@ export function PlannerPage({ projectId }: { projectId: string }) {
         : workspaceMode === "three-d"
           ? "Spatial review"
           : "Curatorial planning";
-  const workspaceDescription =
-    workspaceMode === "installer"
-      ? "Check drill points, install sequence, lock state, and wall-specific risks against the same placement geometry."
-      : workspaceMode === "export"
-        ? "Prepare the current wall and exhibition for technical PDF output without leaving the planning context."
-        : workspaceMode === "three-d"
-          ? "Review the room spatially using the same walls, placements, and openings already defined in 2D."
-          : "Refine wall composition, spacing, and room context with the same authoritative mm-based planner model.";
 
   function handleExportWallPdf() {
     if (!bundle || !selectedWall) {
@@ -448,64 +440,132 @@ export function PlannerPage({ projectId }: { projectId: string }) {
       project={bundle.project}
       activePath="planner"
       title="Planner"
-      description="A professional planning workspace for curatorial layout, installer review, export preparation, and first-pass spatial checking. Every mode reads from the same authoritative exhibition geometry."
+      description="Curatorial planning, installer review, export preparation, and 3D spatial checking from one authoritative exhibition geometry model."
       stats={[
         { label: "Room", value: room.name },
         {
-          label: "Envelope",
+          label: "Dimensions",
           value: `${formatDimension(room.widthMm)} x ${formatDimension(room.depthMm)} x ${formatDimension(room.heightMm)}`,
         },
         { label: "Placed", value: bundle.placements.length.toString() },
         { label: "Openings", value: bundle.openings.length.toString() },
       ]}
     >
-      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-        <Card className="order-2 p-4 sm:p-5 lg:order-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-            Project and Room
-          </p>
-          <h2 className="mt-2 text-xl font-semibold">Spatial definition</h2>
-
-          <div className="mt-5 space-y-4">
-            <Field label="Room name">
-              <input
-                className={inputClassName}
-                value={room.name}
-                onChange={(event) =>
-                  updateRoom(projectId, room.id, { name: event.target.value })
-                }
-              />
-            </Field>
-
-            <div className="grid gap-3">
-              <DimensionField
-                label="Width"
-                valueMm={room.widthMm}
-                onChange={(valueMm) =>
-                  updateRoom(projectId, room.id, { widthMm: valueMm })
-                }
-              />
-              <DimensionField
-                label="Depth"
-                valueMm={room.depthMm}
-                onChange={(valueMm) =>
-                  updateRoom(projectId, room.id, { depthMm: valueMm })
-                }
-              />
-              <DimensionField
-                label="Height"
-                valueMm={room.heightMm}
-                onChange={(valueMm) =>
-                  updateRoom(projectId, room.id, { heightMm: valueMm })
-                }
-              />
+      <div className="space-y-4">
+        <Card className="px-4 py-4 sm:px-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="space-y-3">
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-subtle">
+                <ModeButton
+                  label="Curatorial"
+                  isActive={workspaceMode === "curatorial"}
+                  onClick={() => activateWorkspaceMode("curatorial")}
+                />
+                <ModeButton
+                  label="Installer"
+                  isActive={workspaceMode === "installer"}
+                  onClick={() => activateWorkspaceMode("installer")}
+                />
+                <ModeButton
+                  label="Export"
+                  isActive={workspaceMode === "export"}
+                  onClick={() => activateWorkspaceMode("export")}
+                />
+                <ModeButton
+                  label="3D View"
+                  isActive={workspaceMode === "three-d"}
+                  onClick={() => activateWorkspaceMode("three-d")}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <ViewButton
+                  label="Elevation"
+                  isActive={ui.activeView === "elevation" && workspaceMode !== "three-d"}
+                  onClick={() => {
+                    if (workspaceMode === "three-d" || workspaceMode === "export") {
+                      setWorkspaceMode("curatorial");
+                    }
+                    setActiveView(projectId, "elevation");
+                  }}
+                />
+                <ViewButton
+                  label="Plan"
+                  isActive={ui.activeView === "plan" && workspaceMode !== "three-d"}
+                  onClick={() => {
+                    if (workspaceMode === "three-d" || workspaceMode === "export") {
+                      setWorkspaceMode("curatorial");
+                    }
+                    setActiveView(projectId, "plan");
+                  }}
+                />
+                <ViewButton
+                  label="Spatial"
+                  isActive={ui.activeView === "spatial"}
+                  onClick={() => activateWorkspaceMode("three-d")}
+                />
+              </div>
             </div>
 
-            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-              <p className="text-sm font-semibold text-[var(--foreground)]">
-                Generated walls
-              </p>
-              <div className="mt-3 grid gap-2">
+            <div className="grid gap-3 sm:grid-cols-[repeat(2,minmax(0,1fr))_60px] xl:min-w-[360px]">
+              <SummaryPill label="Room" value={room.name} />
+              <SummaryPill
+                label="Dimensions"
+                value={`${formatDimension(room.widthMm)} x ${formatDimension(room.depthMm)} x ${formatDimension(room.heightMm)}`}
+              />
+              <button
+                type="button"
+                onClick={handleExportWallPdf}
+                className="flex h-full items-center justify-center rounded-[18px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-4 text-sm font-medium text-[var(--foreground-soft)] transition hover:border-[var(--line-strong)] hover:bg-[var(--surface-soft)]"
+              >
+                PDF
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_320px]">
+          <div className="order-2 space-y-4 xl:order-1">
+            <Card className="p-4">
+              <SectionHeading
+                eyebrow="Room"
+                title="Main gallery"
+                caption={`${formatDimension(room.widthMm)} × ${formatDimension(room.depthMm)} × ${formatDimension(room.heightMm)}`}
+              />
+              <div className="mt-4 grid gap-3">
+                <Field label="Room name">
+                  <input
+                    className={inputClassName}
+                    value={room.name}
+                    onChange={(event) =>
+                      updateRoom(projectId, room.id, { name: event.target.value })
+                    }
+                  />
+                </Field>
+                <DimensionField
+                  label="Width"
+                  valueMm={room.widthMm}
+                  onChange={(valueMm) => updateRoom(projectId, room.id, { widthMm: valueMm })}
+                />
+                <DimensionField
+                  label="Depth"
+                  valueMm={room.depthMm}
+                  onChange={(valueMm) => updateRoom(projectId, room.id, { depthMm: valueMm })}
+                />
+                <DimensionField
+                  label="Height"
+                  valueMm={room.heightMm}
+                  onChange={(valueMm) => updateRoom(projectId, room.id, { heightMm: valueMm })}
+                />
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <SectionHeading
+                eyebrow="Walls"
+                title={selectedWall?.name ?? "Select wall"}
+                caption="Generated automatically from the room envelope"
+              />
+              <div className="mt-4 grid gap-2">
                 {bundle.walls.map((wall) => (
                   <button
                     key={wall.id}
@@ -513,31 +573,25 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     onClick={() => selectWall(projectId, wall.id)}
                     className={`flex items-center justify-between rounded-[16px] border px-4 py-3 text-left transition ${
                       wall.id === selectedWall?.id
-                        ? "border-[var(--accent)] bg-[rgba(43,97,82,0.08)]"
-                        : "border-[var(--line)] bg-[var(--surface-soft)] hover:border-[var(--line-strong)]"
+                        ? "border-[rgba(95,169,193,0.26)] bg-[rgba(77,142,163,0.22)]"
+                        : "border-[var(--line)] bg-[rgba(18,27,37,0.82)] hover:border-[var(--line-strong)]"
                     }`}
                   >
-                    <span className="text-sm font-medium">{wall.name}</span>
+                    <span className="text-sm font-medium text-[var(--foreground)]">{wall.name}</span>
                     <span className="text-sm text-[var(--muted-strong)]">
                       {formatDimension(wall.lengthMm)}
                     </span>
                   </button>
                 ))}
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--foreground)]">
-                    Wall openings
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                    Add doors and windows as physical exclusions on the active wall.
-                  </p>
-                </div>
-              </div>
-
+            <Card className="p-4">
+              <SectionHeading
+                eyebrow="Openings"
+                title="Doors and windows"
+                caption={selectedWall ? `${wallOpenings.length} on ${selectedWall.name}` : "Select a wall first"}
+              />
               <div className="mt-4 flex flex-wrap gap-2">
                 <ToolButton
                   label="Add door"
@@ -554,20 +608,17 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   }
                 />
               </div>
-
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-2">
                 {wallOpenings.length === 0 ? (
-                  <p className="rounded-[16px] border border-dashed border-black/10 px-4 py-4 text-sm text-[var(--muted-strong)]">
-                    No openings on {selectedWall?.name ?? "this wall"} yet.
-                  </p>
+                  <CompactEmptyState label="No openings on the active wall yet." />
                 ) : (
                   wallOpenings.map((opening) => (
                     <div
                       key={opening.id}
-                      className={`rounded-[16px] border p-4 transition ${
+                      className={`rounded-[16px] border px-4 py-3 transition ${
                         opening.id === selectedOpening?.id
-                          ? "border-[var(--accent)] bg-[rgba(43,97,82,0.08)]"
-                          : "border-[var(--line)] bg-[var(--surface-soft)]"
+                          ? "border-[rgba(95,169,193,0.26)] bg-[rgba(77,142,163,0.18)]"
+                          : "border-[var(--line)] bg-[rgba(18,27,37,0.82)]"
                       }`}
                     >
                       <button
@@ -575,55 +626,37 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         className="w-full text-left"
                         onClick={() => selectOpening(projectId, opening.id)}
                       >
-                        <p className="text-sm font-semibold">
-                          {opening.label ?? `${opening.type === "door" ? "Door" : "Window"}`}
+                        <p className="text-sm font-semibold text-[var(--foreground)]">
+                          {opening.label ?? (opening.type === "door" ? "Door" : "Window")}
                         </p>
                         <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                          {opening.type === "door" ? "Door" : "Window"} / {formatDimension(opening.widthMm)} x {formatDimension(opening.heightMm)}
-                        </p>
-                        <p className="mt-2 text-sm text-[var(--muted-strong)]">
-                          x {formatMillimeters(opening.xMm)} / y {formatMillimeters(opening.yMm)}
+                          {formatDimension(opening.widthMm)} × {formatDimension(opening.heightMm)}
                         </p>
                       </button>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          className="rounded-full border border-[rgba(143,57,49,0.16)] px-3 py-1.5 text-sm text-[#8f3931] transition hover:bg-[rgba(143,57,49,0.08)]"
-                          onClick={() => deleteOpening(projectId, opening.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
                     </div>
                   ))
                 )}
               </div>
-            </div>
+            </Card>
 
-            <div className="rounded-[20px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[var(--foreground)]">
-                    Artwork quick place
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                    Add and assign works to the selected wall.
-                  </p>
-                </div>
+            <Card className="p-4">
+              <div className="flex items-start justify-between gap-3">
+                <SectionHeading
+                  eyebrow="Artworks"
+                  title="Quick place"
+                  caption="Assign works directly to the active wall"
+                />
                 <button
                   type="button"
-                    className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1 text-sm text-[var(--foreground-soft)] transition hover:bg-[var(--surface)]"
+                  className="rounded-[14px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-3 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-soft)]"
                   onClick={() => addArtwork(projectId)}
                 >
                   Add
                 </button>
               </div>
-
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-2">
                 {bundle.artworks.length === 0 ? (
-                  <p className="rounded-[16px] border border-dashed border-black/10 px-4 py-4 text-sm text-[var(--muted-strong)]">
-                    No artworks yet. Add the first record to start placing work on walls.
-                  </p>
+                  <CompactEmptyState label="No artworks yet. Add the first record to start placing work." />
                 ) : (
                   bundle.artworks.map((artwork) => {
                     const placement = bundle.placements.find(
@@ -633,14 +666,16 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     return (
                       <div
                         key={artwork.id}
-                    className="rounded-[16px] border border-[var(--line)] bg-[var(--surface-soft)] p-4"
+                        className="rounded-[16px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-4 py-3"
                       >
                         <button
                           type="button"
                           className="w-full text-left"
                           onClick={() => selectArtwork(projectId, artwork.id)}
                         >
-                          <p className="text-sm font-semibold">{artwork.title}</p>
+                          <p className="text-sm font-semibold text-[var(--foreground)]">
+                            {artwork.title}
+                          </p>
                           <p className="mt-1 text-sm text-[var(--muted-strong)]">
                             {artwork.artist} / {formatArtworkSize(artwork.widthMm, artwork.heightMm)}
                           </p>
@@ -649,16 +684,16 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                           {selectedWall ? (
                             <button
                               type="button"
-                              className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
+                              className="rounded-[14px] bg-[var(--accent)] px-3 py-2 text-sm font-medium text-[#071018] transition hover:bg-[var(--accent-strong)]"
                               onClick={() =>
                                 placeArtworkOnWall(projectId, artwork.id, selectedWall.id)
                               }
                             >
-                              {placement ? "Move to selected wall" : "Assign to selected wall"}
+                              {placement ? "Move to wall" : "Assign"}
                             </button>
                           ) : null}
                           {placement ? (
-                  <span className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-3 py-1.5 text-sm text-[var(--foreground-soft)]">
+                            <span className="rounded-[14px] border border-[var(--line)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--muted-strong)]">
                               Placed
                             </span>
                           ) : null}
@@ -668,214 +703,153 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   })
                 )}
               </div>
-            </div>
+            </Card>
           </div>
-        </Card>
 
-        <div className="order-1 space-y-6 lg:order-2">
-          <Card className="p-4 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-                  Workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold">
-                  {workspaceHeading}
-                </h2>
-                <p className="mt-2 text-sm text-[var(--muted-strong)]">
-                  {workspaceDescription}
-                </p>
-                  <p className="mt-3 rounded-[16px] border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 text-sm leading-6 text-[var(--foreground-soft)]">
-                  Coordinate system: origin is the bottom-left of the active wall.
-                  `xMm` measures from the left wall edge to the artwork&apos;s left edge.
-                  `yMm` measures from the floor line to the artwork&apos;s bottom edge.
-                </p>
-              </div>
-
-              <div className="flex flex-col items-start gap-3">
-                <div className="-mx-1 flex w-full gap-2 overflow-x-auto px-1 pb-1">
-                  <ModeButton
-                    label="Curatorial"
-                    isActive={workspaceMode === "curatorial"}
-                    onClick={() => activateWorkspaceMode("curatorial")}
-                  />
-                  <ModeButton
-                    label="Installer"
-                    isActive={workspaceMode === "installer"}
-                    onClick={() => activateWorkspaceMode("installer")}
-                  />
-                  <ModeButton
-                    label="Export"
-                    isActive={workspaceMode === "export"}
-                    onClick={() => activateWorkspaceMode("export")}
-                  />
-                  <ModeButton
-                    label="3D View"
-                    isActive={workspaceMode === "three-d"}
-                    onClick={() => activateWorkspaceMode("three-d")}
-                  />
+          <div className="order-1 space-y-4 xl:order-2">
+            <Card className="px-4 py-4 sm:px-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                    {workspaceHeading}
+                  </p>
+                  <h2 className="mt-2 text-xl font-semibold text-[var(--foreground)]">
+                    {selectedWall?.name ?? "Planner workspace"}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-[var(--foreground-soft)]">
+                    Origin is bottom-left of the active wall. xMm measures from wall left to artwork left; yMm measures from floor to artwork bottom.
+                  </p>
                 </div>
-                <div className="-mx-1 flex w-full gap-2 overflow-x-auto px-1 pb-1">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={handleExportExhibitionPdf}
-                    className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
+                    className="rounded-[14px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-soft)]"
                   >
-                    Export Exhibition PDF
+                    Export exhibition
                   </button>
                   <button
                     type="button"
                     onClick={handleExportWallPdf}
-                    className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
+                    className="rounded-[14px] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#071018] transition hover:bg-[var(--accent-strong)]"
                   >
-                    Export Wall PDF
+                    Export wall PDF
                   </button>
-                  <ViewButton
-                    label="Wall elevation"
-                    isActive={ui.activeView === "elevation" && workspaceMode !== "three-d"}
-                    onClick={() => {
-                      if (workspaceMode === "three-d" || workspaceMode === "export") {
-                        setWorkspaceMode("curatorial");
-                      }
-                      setActiveView(projectId, "elevation");
-                    }}
-                  />
-                  <ViewButton
-                    label="Top-down room"
-                    isActive={ui.activeView === "plan" && workspaceMode !== "three-d"}
-                    onClick={() => {
-                      if (workspaceMode === "three-d" || workspaceMode === "export") {
-                        setWorkspaceMode("curatorial");
-                      }
-                      setActiveView(projectId, "plan");
-                    }}
-                  />
                 </div>
-                <label className="flex items-center gap-2 text-sm text-[var(--muted-strong)]">
+              </div>
+              <div className="mt-4 flex flex-wrap gap-4 text-sm text-[var(--muted-strong)]">
+                <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={includeCoverPage}
                     onChange={(event) => setIncludeCoverPage(event.target.checked)}
                   />
-                  Include cover page in exhibition export
+                  Cover page
                 </label>
-                <label className="flex items-center gap-2 text-sm text-[var(--muted-strong)]">
+                <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={installerSheetMode}
                     onChange={(event) => setInstallerSheetMode(event.target.checked)}
                   />
-                  Installer sheet mode in PDF export
+                  Installer sheet mode
                 </label>
               </div>
-            </div>
-          </Card>
-
-          {workspaceMode !== "three-d" && workspaceMode !== "export" ? (
-            <Card className="p-4 sm:p-5">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
-                    {workspaceMode === "installer" ? "Installer tools" : "Layout tools"}
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold">
-                    {workspaceMode === "installer" ? "Sequence and alignment" : "Align and distribute"}
-                  </h3>
-                  <p className="mt-2 text-sm text-[var(--muted-strong)]">
-                    Reference artwork: primary selection, which is the last clicked artwork.
-                    Keyboard nudge: arrows = 10 mm, `Shift` + arrows = 50 mm, `Alt` + arrows = 1 mm.
-                    Locked artworks remain selectable but stay fixed during nudge, align, and distribute actions.
-                  </p>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <ToolbarGroup title="Horizontal">
-                    <ToolButton
-                      label="Align left"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("left")}
-                    />
-                    <ToolButton
-                      label="Align right"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("right")}
-                    />
-                    <ToolButton
-                      label="Align center"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("horizontal-center")}
-                    />
-                    <ToolButton
-                      label="Distribute"
-                      disabled={movableSelectedPlacements.length < 3}
-                      onClick={() => applyDistribution("horizontal")}
-                    />
-                  </ToolbarGroup>
-                  <ToolbarGroup title="Vertical">
-                    <ToolButton
-                      label="Align bottom"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("bottom")}
-                    />
-                    <ToolButton
-                      label="Align top"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("top")}
-                    />
-                    <ToolButton
-                      label="Align centerline"
-                      disabled={movableSelectedPlacements.length < 2}
-                      onClick={() => applyAlignment("centerline")}
-                    />
-                    <ToolButton
-                      label="Distribute"
-                      disabled={movableSelectedPlacements.length < 3}
-                      onClick={() => applyDistribution("vertical")}
-                    />
-                  </ToolbarGroup>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <ToolButton
-                    label="Auto-sequence active wall"
-                    disabled={!selectedWall || wallPlacements.length === 0}
-                    onClick={() =>
-                      selectedWall
-                        ? autoSequenceWallPlacements(projectId, selectedWall.id)
-                        : undefined
-                    }
-                  />
-                </div>
-              </div>
             </Card>
-          ) : null}
 
-          {workspaceMode === "export" ? (
-            <div className="flex flex-col gap-4">
+            {workspaceMode !== "three-d" && workspaceMode !== "export" ? (
+              <Card className="p-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                        Layout tools
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--foreground-soft)]">
+                        Primary selection is the reference. Arrow keys nudge 10 mm, Shift + arrows 50 mm, Alt + arrows 1 mm.
+                      </p>
+                    </div>
+                    <ToolButton
+                      label="Auto-sequence active wall"
+                      disabled={!selectedWall || wallPlacements.length === 0}
+                      onClick={() =>
+                        selectedWall
+                          ? autoSequenceWallPlacements(projectId, selectedWall.id)
+                          : undefined
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <ToolbarGroup title="Horizontal">
+                      <ToolButton
+                        label="Align left"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("left")}
+                      />
+                      <ToolButton
+                        label="Align right"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("right")}
+                      />
+                      <ToolButton
+                        label="Align center"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("horizontal-center")}
+                      />
+                      <ToolButton
+                        label="Distribute"
+                        disabled={movableSelectedPlacements.length < 3}
+                        onClick={() => applyDistribution("horizontal")}
+                      />
+                    </ToolbarGroup>
+                    <ToolbarGroup title="Vertical">
+                      <ToolButton
+                        label="Align bottom"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("bottom")}
+                      />
+                      <ToolButton
+                        label="Align top"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("top")}
+                      />
+                      <ToolButton
+                        label="Align centerline"
+                        disabled={movableSelectedPlacements.length < 2}
+                        onClick={() => applyAlignment("centerline")}
+                      />
+                      <ToolButton
+                        label="Distribute"
+                        disabled={movableSelectedPlacements.length < 3}
+                        onClick={() => applyDistribution("vertical")}
+                      />
+                    </ToolbarGroup>
+                  </div>
+                </div>
+              </Card>
+            ) : null}
+
+            {workspaceMode === "export" ? (
               <Card className="p-5 sm:p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
                   Export center
                 </p>
-                <h3 className="mt-2 text-2xl font-semibold">PDF output from live planner state</h3>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--muted-strong)]">
-                  Export actions on this route use the current wall, artwork labels, installer metadata,
-                  openings, and risk notes already present in the planner. No secondary export-only layout
-                  model is created.
-                </p>
+                <h3 className="mt-2 text-2xl font-semibold">Technical drawing output</h3>
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
+                  <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
                     <p className="text-lg font-semibold">Active wall sheet</p>
                     <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
-                      Export the selected wall as a technical elevation with artwork IDs,
-                      openings, dimensions, drill points, and installer notes.
+                      Export the selected wall elevation with annotations, openings, drill points, and installer metadata.
                     </p>
                     <button
                       type="button"
                       onClick={handleExportWallPdf}
-                      className="mt-5 rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
+                      className="mt-5 rounded-[14px] bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#071018] transition hover:bg-[var(--accent-strong)]"
                     >
-                      Export Wall PDF
+                      Export wall PDF
                     </button>
                   </Card>
-                <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
+                  <Card className="border-[var(--line)] bg-[var(--surface-muted)] p-5 shadow-none">
                     <p className="text-lg font-semibold">Full exhibition set</p>
                     <p className="mt-2 text-sm leading-6 text-[var(--muted-strong)]">
                       Build a multi-page exhibition document with one wall per page and an optional cover.
@@ -883,73 +857,74 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     <button
                       type="button"
                       onClick={handleExportExhibitionPdf}
-                    className="mt-5 rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface)]"
+                      className="mt-5 rounded-[14px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-soft)]"
                     >
-                      Export Exhibition PDF
+                      Export exhibition PDF
                     </button>
                   </Card>
                 </div>
               </Card>
-            </div>
-          ) : null}
+            ) : (
+              <>
+                {selectedWall ? (
+                  <WallElevationView
+                    wall={selectedWall}
+                    artworks={bundle.artworks}
+                    openings={wallOpenings}
+                    placements={wallPlacements}
+                    selectedOpeningId={ui.selectedOpeningId}
+                    selectedPlacementIds={ui.selectedPlacementIds}
+                    visualGuides={actionGuides}
+                    onSelectOpening={(openingId) => selectOpening(projectId, openingId)}
+                    onSelectPlacement={(placementId, additive) =>
+                      selectPlacement(projectId, placementId, additive)
+                    }
+                    onUpdatePlacements={(patches) => updatePlacements(projectId, patches)}
+                  />
+                ) : (
+                  <Card className="p-6">
+                    <CompactEmptyState label="Select a wall to start arranging artworks." />
+                  </Card>
+                )}
 
-          {selectedWall && ui.activeView === "elevation" && workspaceMode !== "export" ? (
-            <WallElevationView
-              wall={selectedWall}
-              artworks={bundle.artworks}
-              openings={wallOpenings}
-              placements={wallPlacements}
-              selectedOpeningId={ui.selectedOpeningId}
-              selectedPlacementIds={ui.selectedPlacementIds}
-              visualGuides={actionGuides}
-              onSelectOpening={(openingId) => selectOpening(projectId, openingId)}
-              onSelectPlacement={(placementId, additive) =>
-                selectPlacement(projectId, placementId, additive)
-              }
-              onUpdatePlacements={(patches) =>
-                updatePlacements(projectId, patches)
-              }
-            />
-          ) : null}
+                {ui.activeView === "plan" && workspaceMode !== "three-d" ? (
+                  <RoomPlanView
+                    room={room}
+                    walls={bundle.walls}
+                    openings={bundle.openings}
+                    placements={bundle.placements}
+                    artworks={bundle.artworks}
+                    selectedOpeningId={ui.selectedOpeningId}
+                    selectedWallId={selectedWall?.id}
+                    onSelectOpening={(openingId) => selectOpening(projectId, openingId)}
+                    onSelectWall={(wallId) => selectWall(projectId, wallId)}
+                  />
+                ) : (
+                  <Room3DView
+                    room={room}
+                    walls={bundle.walls}
+                    openings={bundle.openings}
+                    placements={bundle.placements}
+                    artworks={bundle.artworks}
+                    selectedWallId={selectedWall?.id}
+                    selectedPlacementIds={ui.selectedPlacementIds}
+                    primaryPlacementId={ui.primaryPlacementId}
+                    savedCameraViews={ui.savedCameraViews}
+                    onSelectWall={(wallId) => selectWall(projectId, wallId)}
+                    onSelectPlacement={(placementId, additive) =>
+                      selectPlacement(projectId, placementId, additive)
+                    }
+                    onSaveCameraView={(view) => saveCameraView(projectId, view)}
+                    onDeleteCameraView={(cameraViewId) =>
+                      deleteCameraView(projectId, cameraViewId)
+                    }
+                  />
+                )}
+              </>
+            )}
+          </div>
 
-          {ui.activeView === "plan" && workspaceMode !== "export" ? (
-            <RoomPlanView
-              room={room}
-              walls={bundle.walls}
-              openings={bundle.openings}
-              placements={bundle.placements}
-              artworks={bundle.artworks}
-              selectedOpeningId={ui.selectedOpeningId}
-              selectedWallId={selectedWall?.id}
-              onSelectOpening={(openingId) => selectOpening(projectId, openingId)}
-              onSelectWall={(wallId) => selectWall(projectId, wallId)}
-            />
-          ) : null}
-
-          {ui.activeView === "spatial" ? (
-            <Room3DView
-              room={room}
-              walls={bundle.walls}
-              openings={bundle.openings}
-              placements={bundle.placements}
-              artworks={bundle.artworks}
-              selectedWallId={selectedWall?.id}
-              selectedPlacementIds={ui.selectedPlacementIds}
-              primaryPlacementId={ui.primaryPlacementId}
-              savedCameraViews={ui.savedCameraViews}
-              onSelectWall={(wallId) => selectWall(projectId, wallId)}
-              onSelectPlacement={(placementId, additive) =>
-                selectPlacement(projectId, placementId, additive)
-              }
-              onSaveCameraView={(view) => saveCameraView(projectId, view)}
-              onDeleteCameraView={(cameraViewId) =>
-                deleteCameraView(projectId, cameraViewId)
-              }
-            />
-          ) : null}
-        </div>
-
-        <Card className="order-3 p-4 sm:p-5 xl:order-3">
+          <Card className="order-3 p-4 sm:p-5 xl:order-3">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
             Properties
           </p>
@@ -1470,6 +1445,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
           </div>
         </Card>
       </div>
+      </div>
     </ProjectShell>
   );
 }
@@ -1513,10 +1489,10 @@ function ViewButton({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+      className={`shrink-0 rounded-[14px] px-4 py-2 text-sm font-medium transition ${
         isActive
-          ? "bg-[var(--accent)] text-[#051017]"
-          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface-muted)]"
+          ? "border border-[rgba(95,169,193,0.26)] bg-[rgba(77,142,163,0.24)] text-[var(--foreground)]"
+          : "border border-[var(--line)] bg-[rgba(18,27,37,0.82)] text-[var(--foreground-soft)] hover:bg-[var(--surface-soft)]"
       }`}
     >
       {label}
@@ -1537,10 +1513,10 @@ function ModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+      className={`shrink-0 rounded-[14px] px-4 py-2 text-sm font-medium transition ${
         isActive
-          ? "bg-[var(--foreground)] text-[var(--surface-strong)]"
-          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface-muted)]"
+          ? "border border-[rgba(95,169,193,0.26)] bg-[rgba(77,142,163,0.24)] text-[var(--foreground)]"
+          : "border border-[var(--line)] bg-[rgba(18,27,37,0.82)] text-[var(--foreground-soft)] hover:bg-[var(--surface-soft)]"
       }`}
     >
       {label}
@@ -1556,8 +1532,8 @@ function ToolbarGroup({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-      <p className="text-sm font-semibold text-[var(--foreground)]">{title}</p>
+    <div className="rounded-[18px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted-strong)]">{title}</p>
       <div className="mt-3 flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -1577,10 +1553,10 @@ function ToolButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
+      className={`shrink-0 rounded-[14px] px-3 py-2 text-sm font-medium transition ${
         disabled
-          ? "cursor-not-allowed border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--muted-strong)] opacity-55"
-          : "border border-[var(--line)] bg-[var(--surface-soft)] text-[var(--foreground-soft)] hover:bg-[var(--surface)]"
+          ? "cursor-not-allowed border border-[var(--line)] bg-[rgba(18,27,37,0.62)] text-[var(--muted-strong)] opacity-55"
+          : "border border-[var(--line)] bg-[rgba(18,27,37,0.82)] text-[var(--foreground-soft)] hover:bg-[var(--surface-soft)]"
       }`}
     >
       {label}
@@ -1616,10 +1592,51 @@ function DimensionField({
 
 function SummaryBlock({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="rounded-[18px] border border-[var(--line)] bg-[var(--surface-muted)] p-4">
+    <div className="rounded-[18px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] p-4">
       <p className="text-sm font-semibold text-[var(--foreground)]">{title}</p>
       <p className="mt-1 text-sm text-[var(--muted-strong)]">{subtitle}</p>
     </div>
+  );
+}
+
+function SummaryPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-[var(--line)] bg-[rgba(18,27,37,0.82)] px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-semibold text-[var(--foreground)]">{value}</p>
+    </div>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  caption,
+}: {
+  eyebrow: string;
+  title: string;
+  caption?: string;
+}) {
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted-strong)]">
+        {eyebrow}
+      </p>
+      <h3 className="mt-2 text-lg font-semibold text-[var(--foreground)]">{title}</h3>
+      {caption ? (
+        <p className="mt-1 text-sm leading-6 text-[var(--muted-strong)]">{caption}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function CompactEmptyState({ label }: { label: string }) {
+  return (
+    <p className="rounded-[16px] border border-dashed border-[var(--line)] px-4 py-4 text-sm text-[var(--muted-strong)]">
+      {label}
+    </p>
   );
 }
 
