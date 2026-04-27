@@ -16,11 +16,7 @@ import {
   translatePlacement,
   visualGuidesFromSnapGuides,
 } from "@/lib/domain/placement";
-import {
-  formatArtworkSize,
-  formatDimension,
-  formatMillimeters,
-} from "@/lib/domain/format";
+import { formatDimension, formatMillimeters } from "@/lib/domain/format";
 import {
   HUMAN_REFERENCE_HEIGHT_MM,
   HUMAN_REFERENCE_LABEL,
@@ -105,6 +101,7 @@ export function WallElevationView({
     ...(visualGuides ?? []),
     ...(dragState ? visualGuidesFromSnapGuides(dragState.guides) : []),
   ];
+  const placementLabelMap = buildPlacementLabelMap(placements);
 
   function finishDrag() {
     if (!dragState) {
@@ -228,7 +225,7 @@ export function WallElevationView({
           textAnchor="end"
           fill="rgba(214,223,235,0.9)"
         >
-          Standard centerline {formatMillimeters(STANDARD_CENTERLINE_MM)}
+          C {formatDimension(STANDARD_CENTERLINE_MM)}
         </text>
 
         {activeGuides.map((guide, index) =>
@@ -423,14 +420,6 @@ export function WallElevationView({
                   strokeDasharray="90 50"
                 />
               ) : null}
-              <text
-                x={box.leftMm + 80}
-                y={topY + 150}
-                fontSize={96}
-                fill="rgba(214,223,235,0.76)"
-              >
-                {opening.label ?? (opening.type === "door" ? "Door" : "Window")}
-              </text>
             </g>
           );
         })}
@@ -455,6 +444,7 @@ export function WallElevationView({
           const isSelected = selectedPlacementIds.includes(placement.id);
           const centerlineY = wall.heightMm - getPlacementCenterlineMm(placement);
           const isInvalid = !validation.isValid;
+          const placementLabel = placementLabelMap.get(placement.id) ?? "A";
           const fill = isInvalid
             ? "rgba(143,57,49,0.16)"
             : isSelected
@@ -610,52 +600,8 @@ export function WallElevationView({
                       fill={fill}
                     />
                   ) : null}
-                  <rect
-                    x={placement.xMm}
-                    y={topY + placement.heightMm - 260}
-                    width={placement.widthMm}
-                    height={260}
-                    fill="rgba(8,11,16,0.82)"
-                    clipPath={`url(#artwork-preview-${placement.id})`}
-                  />
-                  <text
-                    x={placement.xMm + 90}
-                    y={topY + placement.heightMm - 126}
-                    fontSize={96}
-                    fill="#f4f7fb"
-                  >
-                    {artwork.title}
-                  </text>
-                  <text
-                    x={placement.xMm + 90}
-                    y={topY + placement.heightMm - 40}
-                    fontSize={74}
-                    fill="rgba(214,223,235,0.88)"
-                  >
-                    {artwork.artist} /{" "}
-                    {formatArtworkSize(placement.widthMm, placement.heightMm)}
-                  </text>
                 </>
-              ) : (
-                <>
-                  <text
-                    x={placement.xMm + 90}
-                    y={topY + 150}
-                    fontSize={110}
-                    fill="rgba(244,247,251,0.94)"
-                  >
-                    {artwork.title}
-                  </text>
-                  <text
-                    x={placement.xMm + 90}
-                    y={topY + 286}
-                    fontSize={90}
-                    fill="rgba(198,210,225,0.78)"
-                  >
-                    {formatArtworkSize(placement.widthMm, placement.heightMm)}
-                  </text>
-                </>
-              )}
+              ) : null}
 
               <rect
                 x={placement.xMm}
@@ -667,6 +613,27 @@ export function WallElevationView({
                 stroke={stroke}
                 strokeWidth={isSelected ? 28 : 18}
               />
+              <g transform={`translate(${placement.xMm + 72} ${topY + placement.heightMm - 72})`}>
+                <rect
+                  x={0}
+                  y={-116}
+                  width={168}
+                  height={116}
+                  rx={28}
+                  fill="rgba(8,11,16,0.84)"
+                  stroke="rgba(214,223,235,0.14)"
+                  strokeWidth={6}
+                />
+                <text
+                  x={84}
+                  y={-38}
+                  fontSize={70}
+                  textAnchor="middle"
+                  fill="rgba(244,247,251,0.94)"
+                >
+                  {placementLabel}
+                </text>
+              </g>
 
               {hangingPoints.map((point) => {
                 const pointY = wall.heightMm - point.yMm;
@@ -946,4 +913,13 @@ function getHighestSeverity(
   }
 
   return null;
+}
+
+function buildPlacementLabelMap(placements: Placement[]) {
+  return new Map(
+    placements
+      .slice()
+      .sort((left, right) => left.xMm - right.xMm || left.yMm - right.yMm)
+      .map((placement, index) => [placement.id, `A${index + 1}`]),
+  );
 }

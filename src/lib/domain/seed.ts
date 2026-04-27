@@ -72,6 +72,23 @@ export const seedProject: ProjectBundle = {
       requiresTeamLift: false,
       specialHandling: "none",
     },
+    {
+      id: "placement-field-notes",
+      projectId,
+      artworkId: "artwork-field-notes",
+      wallId: `${roomId}-wall-1`,
+      widthMm: 900,
+      heightMm: 1200,
+      xMm: 5400,
+      yMm: 1000,
+      installId: "INST-002",
+      installNotes: "",
+      priorityOrder: 2,
+      mountType: "standard-hook",
+      isLocked: false,
+      requiresTeamLift: false,
+      specialHandling: "none",
+    },
   ],
 };
 
