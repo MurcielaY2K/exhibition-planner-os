@@ -120,6 +120,20 @@ export interface Placement {
   specialHandling: SpecialHandlingType;
 }
 
+export interface ProjectLight {
+  id: string;
+  projectId: string;
+  roomId: string;
+  label: string;
+  xMm: number;
+  zMm: number;
+  heightMm: number;
+  intensity: number;
+  temperatureK: number;
+  beamAngleDeg: number;
+  enabled: boolean;
+}
+
 export interface PlacementBoundingBox {
   leftMm: number;
   rightMm: number;
@@ -192,6 +206,7 @@ export interface PlannerSelection {
   selectedWallId: string;
   selectedArtworkId?: string;
   selectedOpeningId?: string;
+  selectedLightId?: string;
   selectedPlacementIds: string[];
   primaryPlacementId?: string;
   activeView: PlannerView;
@@ -203,6 +218,7 @@ export interface ProjectBundle {
   rooms: Room[];
   walls: Wall[];
   openings: Opening[];
+  lights: ProjectLight[];
   artworks: Artwork[];
   placements: Placement[];
 }

@@ -20,6 +20,7 @@ import type {
   Placement,
   PlannerSelection,
   PlannerView,
+  ProjectLight,
   Project,
   ProjectBundle,
   Room,
@@ -36,6 +37,7 @@ interface ExhibitionState {
   selectWall: (projectId: string, wallId: string) => void;
   selectArtwork: (projectId: string, artworkId: string) => void;
   selectOpening: (projectId: string, openingId?: string) => void;
+  selectLight: (projectId: string, lightId?: string) => void;
   selectPlacement: (
     projectId: string,
     placementId: string,
@@ -43,9 +45,12 @@ interface ExhibitionState {
   ) => void;
   addArtwork: (projectId: string) => void;
   addOpening: (projectId: string, wallId: string, type: OpeningType) => void;
+  addLight: (projectId: string, roomId: string) => void;
   updateArtwork: (projectId: string, artworkId: string, patch: Partial<Artwork>) => void;
   updateOpening: (projectId: string, openingId: string, patch: Partial<Opening>) => void;
+  updateLight: (projectId: string, lightId: string, patch: Partial<ProjectLight>) => void;
   deleteOpening: (projectId: string, openingId: string) => void;
+  deleteLight: (projectId: string, lightId: string) => void;
   placeArtworkOnWall: (projectId: string, artworkId: string, wallId: string) => void;
   updatePlacement: (
     projectId: string,
@@ -132,6 +137,7 @@ function ensurePlannerSelection(selection?: PlannerSelection): PlannerSelection 
     selectedWallId: selection?.selectedWallId ?? "",
     selectedArtworkId: selection?.selectedArtworkId,
     selectedOpeningId: selection?.selectedOpeningId,
+    selectedLightId: selection?.selectedLightId,
     selectedPlacementIds: selection?.selectedPlacementIds ?? [],
     primaryPlacementId: selection?.primaryPlacementId,
     activeView: selection?.activeView ?? "elevation",
@@ -171,6 +177,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
       rooms: [room],
       walls: createWallsForRoom(room),
       openings: [],
+      lights: [],
       artworks: [],
       placements: [],
     };
@@ -182,6 +189,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         [projectId]: {
           selectedRoomId: room.id,
           selectedWallId: room.wallIds[0],
+          selectedLightId: undefined,
           selectedPlacementIds: [],
           activeView: "elevation",
           savedCameraViews: [],
@@ -278,6 +286,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
           ...ensurePlannerSelection(state.ui[projectId]),
           selectedWallId: wallId,
           selectedOpeningId: undefined,
+          selectedLightId: undefined,
           selectedPlacementIds: [],
           primaryPlacementId: undefined,
         },
@@ -290,6 +299,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         [projectId]: {
           ...state.ui[projectId],
           selectedOpeningId: undefined,
+          selectedLightId: undefined,
           selectedArtworkId: artworkId,
         },
       },
@@ -305,9 +315,29 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
           [projectId]: {
             ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: openingId,
+            selectedLightId: undefined,
             selectedWallId: opening?.wallId ?? state.ui[projectId]?.selectedWallId,
             selectedPlacementIds: [],
             primaryPlacementId: undefined,
+          },
+        },
+      };
+    }),
+  selectLight: (projectId, lightId) =>
+    set((state) => {
+      const bundle = findProject(state.projects, projectId);
+      const light = bundle?.lights.find((entry) => entry.id === lightId);
+
+      return {
+        ui: {
+          ...state.ui,
+          [projectId]: {
+            ...ensurePlannerSelection(state.ui[projectId]),
+            selectedLightId: lightId,
+            selectedOpeningId: undefined,
+            selectedPlacementIds: [],
+            primaryPlacementId: undefined,
+            selectedRoomId: light?.roomId ?? state.ui[projectId]?.selectedRoomId ?? "",
           },
         },
       };
@@ -332,6 +362,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
           [projectId]: {
             ...ensurePlannerSelection(state.ui[projectId]),
             selectedOpeningId: undefined,
+            selectedLightId: undefined,
             selectedPlacementIds: nextSelection,
             primaryPlacementId,
             selectedArtworkId:
@@ -368,14 +399,15 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         ),
         ui: {
           ...state.ui,
-          [projectId]: {
-            ...ensurePlannerSelection(state.ui[projectId]),
-            selectedOpeningId: undefined,
-            selectedArtworkId: artworkId,
-            selectedPlacementIds: [],
-            primaryPlacementId: undefined,
-          },
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          selectedOpeningId: undefined,
+          selectedLightId: undefined,
+          selectedArtworkId: artworkId,
+          selectedPlacementIds: [],
+          primaryPlacementId: undefined,
         },
+      },
       };
     }),
   addOpening: (projectId, wallId, type) =>
@@ -419,12 +451,63 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         }),
         ui: {
           ...state.ui,
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          selectedWallId: wallId,
+          selectedOpeningId: openingId,
+          selectedLightId: undefined,
+          selectedPlacementIds: [],
+          primaryPlacementId: undefined,
+        },
+      },
+      };
+    }),
+  addLight: (projectId, roomId) =>
+    set((state) => {
+      const lightId = createId("light");
+
+      return {
+        projects: state.projects.map((bundle) => {
+          if (bundle.project.id !== projectId) {
+            return bundle;
+          }
+
+          const room = bundle.rooms.find((entry) => entry.id === roomId);
+
+          if (!room) {
+            return bundle;
+          }
+
+          const roomLights = bundle.lights.filter((entry) => entry.roomId === roomId);
+          const nextLight: ProjectLight = {
+            id: lightId,
+            projectId,
+            roomId,
+            label: `Light ${roomLights.length + 1}`,
+            xMm: Math.round(room.widthMm * 0.5),
+            zMm: Math.round(room.depthMm * 0.45),
+            heightMm: Math.max(room.heightMm - 450, 2200),
+            intensity: 80,
+            temperatureK: 3200,
+            beamAngleDeg: 28,
+            enabled: true,
+          };
+
+          return {
+            ...bundle,
+            project: touchProject(bundle.project),
+            lights: [...bundle.lights, nextLight],
+          };
+        }),
+        ui: {
+          ...state.ui,
           [projectId]: {
             ...ensurePlannerSelection(state.ui[projectId]),
-            selectedWallId: wallId,
-            selectedOpeningId: openingId,
+            selectedLightId: lightId,
+            selectedOpeningId: undefined,
             selectedPlacementIds: [],
             primaryPlacementId: undefined,
+            selectedRoomId: roomId,
           },
         },
       };
@@ -603,6 +686,20 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         };
       }),
     })),
+  updateLight: (projectId, lightId, patch) =>
+    set((state) => ({
+      projects: state.projects.map((bundle) =>
+        bundle.project.id === projectId
+          ? {
+              ...bundle,
+              project: touchProject(bundle.project),
+              lights: bundle.lights.map((light) =>
+                light.id === lightId ? { ...light, ...patch } : light,
+              ),
+            }
+          : bundle,
+      ),
+    })),
   deleteOpening: (projectId, openingId) =>
     set((state) => ({
       projects: state.projects.map((bundle) =>
@@ -622,6 +719,28 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
             state.ui[projectId]?.selectedOpeningId === openingId
               ? undefined
               : state.ui[projectId]?.selectedOpeningId,
+        },
+      },
+    })),
+  deleteLight: (projectId, lightId) =>
+    set((state) => ({
+      projects: state.projects.map((bundle) =>
+        bundle.project.id === projectId
+          ? {
+              ...bundle,
+              project: touchProject(bundle.project),
+              lights: bundle.lights.filter((light) => light.id !== lightId),
+            }
+          : bundle,
+      ),
+      ui: {
+        ...state.ui,
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          selectedLightId:
+            state.ui[projectId]?.selectedLightId === lightId
+              ? undefined
+              : state.ui[projectId]?.selectedLightId,
         },
       },
     })),
