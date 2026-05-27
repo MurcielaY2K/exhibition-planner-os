@@ -14,13 +14,14 @@ import {
 } from "@/lib/state/use-exhibition-store";
 
 export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
-  const { bundle, addArtwork, selectArtwork, updateArtwork, selectedArtworkId } =
+  const { bundle, addArtwork, selectArtwork, updateArtwork, deleteArtwork, selectedArtworkId } =
     useExhibitionStore(
       useShallow((state) => ({
         bundle: getProjectBundle(state.projects, projectId),
         addArtwork: state.addArtwork,
         selectArtwork: state.selectArtwork,
         updateArtwork: state.updateArtwork,
+        deleteArtwork: state.deleteArtwork,
         selectedArtworkId: state.ui[projectId]?.selectedArtworkId,
       })),
     );
@@ -75,14 +76,12 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
 
           <div className="mt-5 space-y-3">
             {bundle.artworks.map((artwork) => (
-              <button
+              <div
                 key={artwork.id}
-                type="button"
-                onClick={() => selectArtwork(projectId, artwork.id)}
-                className={`w-full rounded-[20px] border px-4 py-4 text-left transition ${
+                className={`rounded-[20px] border px-4 py-4 transition ${
                   artwork.id === selectedArtwork?.id
                     ? "border-[var(--accent)] bg-[rgba(126,197,214,0.1)]"
-                    : "border-[var(--line)] bg-[var(--surface-soft)] hover:border-[var(--line-strong)]"
+                    : "border-[var(--line)] bg-[var(--surface-soft)]"
                 }`}
               >
                 <div className="grid gap-4 sm:grid-cols-[84px_minmax(0,1fr)] sm:items-center">
@@ -91,17 +90,31 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
                     title={artwork.title}
                     className="h-[84px] w-[84px] rounded-[16px]"
                   />
-                  <div>
-                    <p className="text-sm font-semibold">{artwork.title}</p>
-                    <p className="mt-1 text-sm text-[var(--muted-strong)]">
-                      {artwork.artist}
-                    </p>
-                    <p className="mt-2 text-sm text-[var(--foreground-soft)]">
-                      {formatArtworkSize(artwork.widthMm, artwork.heightMm)}
-                    </p>
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => selectArtwork(projectId, artwork.id)}
+                    >
+                      <p className="text-sm font-semibold">{artwork.title}</p>
+                      <p className="mt-1 text-sm text-[var(--muted-strong)]">
+                        {artwork.artist}
+                      </p>
+                      <p className="mt-2 text-sm text-[var(--foreground-soft)]">
+                        {formatArtworkSize(artwork.widthMm, artwork.heightMm)}
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${artwork.title}`}
+                      onClick={() => deleteArtwork(projectId, artwork.id)}
+                      className="shrink-0 p-2 text-[var(--muted-strong)] transition hover:text-[var(--danger)]"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </Card>

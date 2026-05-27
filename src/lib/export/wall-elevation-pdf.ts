@@ -1462,7 +1462,12 @@ function sanitizeFileName(value: string) {
 }
 
 function sanitizeText(value: string) {
-  return value.replace(/[^\x20-\x7E]/g, "?");
+  // Normalize unicode to decomposed form, strip combining diacritics, then
+  // replace any remaining non-printable-ASCII characters with a safe fallback.
+  return value
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^\x20-\x7E]/g, "?");
 }
 
 function escapePdfText(value: string) {
@@ -1494,6 +1499,10 @@ function downloadPdfBytes(bytes: Uint8Array, fileName: string) {
 
   anchor.href = url;
   anchor.download = fileName;
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
   anchor.click();
-  window.URL.revokeObjectURL(url);
+  document.body.removeChild(anchor);
+  // Delay revoke so the browser has time to start the download
+  setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
 }

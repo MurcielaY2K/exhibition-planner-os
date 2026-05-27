@@ -43,12 +43,16 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     selectLight,
     selectPlacement,
     addArtwork,
+    addOpening,
     addLight,
     placeArtworkOnWall,
     updateArtwork,
     updateLight,
     updatePlacement,
     updatePlacements,
+    deleteArtwork,
+    deletePlacement,
+    deleteOpening,
     deleteLight,
     saveCameraView,
     deleteCameraView,
@@ -165,7 +169,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
               <TopNavButton label="PROJECT" value={bundle.project.name} />
               <Link
                 href={`/projects/${projectId}/export`}
-                className="inline-flex min-h-7 items-center border border-[#ebff00] bg-[#ebff00] px-3 text-[9px] font-semibold uppercase tracking-[0.22em] text-black"
+                className="inline-flex min-h-[44px] items-center border border-[#ebff00] bg-[#ebff00] px-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-black"
               >
                 Export
               </Link>
@@ -179,14 +183,14 @@ export function PlannerPage({ projectId }: { projectId: string }) {
             <div className="flex h-full flex-col">
               <div className="border-b border-white/8 px-4 py-4">
                 <div className="mb-4 border border-white/8 bg-[#0d0d0d] px-3 py-2.5">
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-[#6f6f6f]">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#6f6f6f]">
                     Room
                   </p>
                   <p className="mt-1.5 text-[12px] font-medium text-[#f1efe6]">{room.name}</p>
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                     Walls
                   </p>
                   <div className="mt-3 grid gap-1.5">
@@ -227,8 +231,57 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   </div>
                 </div>
 
+                <div className="mb-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                      Openings
+                    </p>
+                    <div className="flex items-center gap-2">
+                      {selectedWall ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => addOpening(projectId, selectedWall.id, "door")}
+                            className="border border-white/10 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-[#c9c8c1] transition hover:border-white/20"
+                          >
+                            Door
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => addOpening(projectId, selectedWall.id, "window")}
+                            className="border border-white/10 px-2 py-1 text-[11px] uppercase tracking-[0.14em] text-[#c9c8c1] transition hover:border-white/20"
+                          >
+                            Win
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+                  {bundle.openings.filter((o) => o.wallId === selectedWall?.id).length > 0 ? (
+                    <div className="mt-2 space-y-1">
+                      {bundle.openings
+                        .filter((o) => o.wallId === selectedWall?.id)
+                        .map((opening) => (
+                          <div
+                            key={opening.id}
+                            className="flex items-center justify-between border border-white/8 bg-[#111111] px-3 py-2"
+                          >
+                            <span className="text-[12px] text-[#c9c8c1]">{opening.label}</span>
+                            <button
+                              type="button"
+                              onClick={() => deleteOpening(projectId, opening.id)}
+                              className="text-[11px] text-[#ff7b72] transition hover:text-[#ff9a93]"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  ) : null}
+                </div>
+
                 <div className="flex items-center justify-between">
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                     Artworks
                   </p>
                   <button
@@ -240,7 +293,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   </button>
                 </div>
 
-                <div className="mt-4 border border-dashed border-white/10 bg-[#0d0d0d] px-3 py-4 text-center text-[9px] uppercase tracking-[0.18em] text-[#666]">
+                <div className="mt-4 border border-dashed border-white/10 bg-[#0d0d0d] px-3 py-4 text-center text-[11px] uppercase tracking-[0.18em] text-[#666]">
                   Add artworks
                 </div>
               </div>
@@ -259,42 +312,43 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       selectedArtwork?.id === artwork.id;
 
                     return (
-                      <button
+                      <div
                         key={artwork.id}
-                        type="button"
-                        onClick={() => {
-                          if (placement) {
-                            selectWall(projectId, placement.wallId);
-                            handleSelectPlacement(placement.id, false);
-                            return;
-                          }
-
-                          selectArtwork(projectId, artwork.id);
-                          setInspectorTab("props");
-                        }}
-                        className={`w-full border px-3 py-2.5 text-left transition ${
+                        className={`flex items-center justify-between gap-2 border px-3 py-2.5 transition ${
                           isSelected
                             ? "border-[#ebff00]/70 bg-[#161616] text-[#f3f3f3]"
-                            : "border-white/8 bg-[#111111] text-[#989898] hover:border-white/14 hover:bg-[#141414]"
+                            : "border-white/8 bg-[#111111] text-[#989898]"
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <span className="block truncate text-[10px] uppercase tracking-[0.16em] text-[#e7e5de]">
-                              {artwork.title}
-                            </span>
-                            <span className="block truncate pt-1 text-[10px] text-[#6f6d67]">
-                              {artwork.artist}
-                            </span>
-                          </div>
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => {
+                            if (placement) {
+                              selectWall(projectId, placement.wallId);
+                              handleSelectPlacement(placement.id, false);
+                              return;
+                            }
+
+                            selectArtwork(projectId, artwork.id);
+                            setInspectorTab("props");
+                          }}
+                        >
+                          <span className="block truncate text-[12px] uppercase tracking-[0.16em] text-[#e7e5de]">
+                            {artwork.title}
+                          </span>
+                          <span className="block truncate pt-1 text-[12px] text-[#6f6d67]">
+                            {artwork.artist}
+                          </span>
+                        </button>
+                        <div className="flex shrink-0 items-center gap-1">
                           {wallLabel ? (
-                            <span className="text-[10px] text-[#ebff00]">{wallLabel}</span>
+                            <span className="text-[12px] text-[#ebff00]">{wallLabel}</span>
                           ) : (
                             <button
                               type="button"
-                              className="text-[10px] uppercase tracking-[0.14em] text-[#ebff00]"
-                              onClick={(event) => {
-                                event.stopPropagation();
+                              className="min-h-[44px] px-2 text-[12px] uppercase tracking-[0.14em] text-[#ebff00]"
+                              onClick={() => {
                                 if (selectedWall) {
                                   placeArtworkOnWall(projectId, artwork.id, selectedWall.id);
                                 }
@@ -303,8 +357,16 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                               Place
                             </button>
                           )}
+                          <button
+                            type="button"
+                            className="min-h-[44px] px-2 text-[14px] text-[#555] transition hover:text-[#ff7b72]"
+                            aria-label={`Delete ${artwork.title}`}
+                            onClick={() => deleteArtwork(projectId, artwork.id)}
+                          >
+                            ×
+                          </button>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -315,7 +377,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   <div className="space-y-2.5 border border-white/8 bg-[#0d0d0d] px-3 py-3">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                           Selection
                         </p>
                         <p className="mt-1 text-[11px] text-[#f1f1f1]">
@@ -327,7 +389,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         onClick={() => updatePlacement(projectId, selectedPlacement.id, {
                           isLocked: !selectedPlacement.isLocked,
                         })}
-                        className={`border px-2 py-1 text-[9px] uppercase tracking-[0.18em] ${
+                        className={`border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${
                           selectedPlacement.isLocked
                             ? "border-[#ebff00]/40 text-[#ebff00]"
                             : "border-white/10 text-[#9a9a9a]"
@@ -377,7 +439,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     </div>
 
                     <label className="grid gap-1.5">
-                      <span className="text-[9px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
                         Mount
                       </span>
                       <select
@@ -396,12 +458,20 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         ))}
                       </select>
                     </label>
+
+                    <button
+                      type="button"
+                      onClick={() => deletePlacement(projectId, selectedPlacement.id)}
+                      className="w-full border border-white/10 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a9a9a] transition hover:border-[#ff7b72]/40 hover:text-[#ff7b72]"
+                    >
+                      Remove from wall
+                    </button>
                   </div>
                 ) : null}
 
                 <div className="space-y-2.5 border border-white/8 bg-[#0d0d0d] px-3 py-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                       Lights
                     </p>
                     <button
@@ -446,7 +516,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   {selectedLight ? (
                     <div className="space-y-2 border-t border-white/8 pt-3">
                       <label className="grid gap-1.5">
-                        <span className="text-[9px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
                           Label
                         </span>
                         <input
@@ -523,7 +593,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                               enabled: !selectedLight.enabled,
                             })
                           }
-                          className={`border px-2 py-1 text-[9px] uppercase tracking-[0.18em] ${
+                          className={`border px-2 py-1 text-[11px] uppercase tracking-[0.18em] ${
                             selectedLight.enabled
                               ? "border-[#ebff00]/40 text-[#ebff00]"
                               : "border-white/10 text-[#9a9a9a]"
@@ -534,7 +604,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         <button
                           type="button"
                           onClick={() => deleteLight(projectId, selectedLight.id)}
-                          className="border border-white/10 px-2 py-1 text-[9px] uppercase tracking-[0.18em] text-[#9a9a9a]"
+                          className="border border-white/10 px-2 py-1 text-[11px] uppercase tracking-[0.18em] text-[#9a9a9a]"
                         >
                           Remove
                         </button>
@@ -544,7 +614,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 </div>
 
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                     Wall color
                   </p>
                   <div className="mt-3 flex gap-2">
@@ -553,7 +623,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         key={color}
                         type="button"
                         onClick={() => setWallColor(color)}
-                        className={`h-5 w-5 border ${
+                        className={`h-11 w-11 border-2 ${
                           wallColor === color ? "border-[#ebff00]" : "border-white/12"
                         }`}
                         style={{ backgroundColor: color }}
@@ -564,7 +634,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 </div>
 
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                     Ambient light
                   </p>
                   <div className="mt-3 flex items-center gap-3">
@@ -592,7 +662,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 {ui.activeView === "spatial" ? "Orbit / Zoom / Pan" : "Move / Snap / Shift-select"}
               </div>
             </div>
-            <div className="flex items-center justify-between border-b border-white/8 bg-[#0d0d0d] px-4 py-2 text-[9px] uppercase tracking-[0.2em] text-[#696969]">
+            <div className="flex items-center justify-between border-b border-white/8 bg-[#0d0d0d] px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-[#696969]">
               <div className="flex items-center gap-3">
                 <span className="text-[#f3f1e8]">{selectedWall?.name ?? "No wall"}</span>
                 {selectedWall ? (
@@ -726,7 +796,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 selectedPlacement && selectedArtwork && selectedWall ? (
                   <div className="space-y-3">
                     <div className="border-b border-white/8 pb-4">
-                      <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                         {selectedPlacementLabel ?? "A1"}
                       </p>
                       <h3 className="mt-1.5 text-[13px] font-semibold text-[#f1f1f1]">
@@ -777,7 +847,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 selectedLight ? (
                   <div className="space-y-3">
                     <div className="border-b border-white/8 pb-4">
-                      <p className="text-[9px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
                         {selectedLight.label}
                       </p>
                       <h3 className="mt-1.5 text-[13px] font-semibold text-[#f1f1f1]">
@@ -868,12 +938,16 @@ function useProjectPlanner(projectId: string) {
       selectLight: state.selectLight,
       selectPlacement: state.selectPlacement,
       addArtwork: state.addArtwork,
+      addOpening: state.addOpening,
       addLight: state.addLight,
       placeArtworkOnWall: state.placeArtworkOnWall,
       updateArtwork: state.updateArtwork,
       updateLight: state.updateLight,
       updatePlacement: state.updatePlacement,
       updatePlacements: state.updatePlacements,
+      deleteArtwork: state.deleteArtwork,
+      deletePlacement: state.deletePlacement,
+      deleteOpening: state.deleteOpening,
       deleteLight: state.deleteLight,
       saveCameraView: state.saveCameraView,
       deleteCameraView: state.deleteCameraView,
@@ -884,7 +958,7 @@ function useProjectPlanner(projectId: string) {
 function CompactStatRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 border border-white/8 bg-[#141414] px-3 py-1.5">
-      <span className="text-[9px] uppercase tracking-[0.2em] text-[#737373]">
+      <span className="text-[11px] uppercase tracking-[0.2em] text-[#737373]">
         {label}
       </span>
       <span className="text-[12px] font-medium text-[#f1f1f1]">{value}</span>
@@ -905,7 +979,7 @@ function CompactInput({
 }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-[9px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+      <span className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
         {label}
       </span>
       <input
@@ -934,7 +1008,7 @@ function TopNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-7 items-center gap-2 border px-2.5 text-[9px] uppercase tracking-[0.22em] transition ${
+      className={`inline-flex min-h-[44px] items-center gap-2 border px-3 text-[11px] uppercase tracking-[0.22em] transition ${
         active
           ? "border-[#ebff00]/40 bg-[#161616] text-[#ebff00]"
           : "border-white/8 bg-[#0f0f0f] text-[#8a8a8a] hover:border-white/16 hover:text-[#d0d0d0]"
@@ -961,7 +1035,7 @@ function InspectorTab({
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-0 flex-1 border-r border-white/8 px-3 py-3 text-[9px] uppercase tracking-[0.24em] last:border-r-0 ${
+      className={`min-h-[44px] min-w-0 flex-1 border-r border-white/8 px-3 py-3 text-[11px] uppercase tracking-[0.24em] last:border-r-0 ${
         active
           ? "border-b border-b-[#ebff00] bg-[#121212] text-[#ebff00]"
           : "text-[#666] hover:text-[#bdbdbd]"
@@ -985,7 +1059,7 @@ function QuickActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`grid h-7 min-w-7 place-items-center border px-2 text-[9px] uppercase tracking-[0.18em] ${
+      className={`grid h-[44px] min-w-[44px] place-items-center border px-2 text-[11px] uppercase tracking-[0.18em] ${
         active
           ? "border-[#ebff00] bg-[#151515] text-[#ebff00]"
           : "border-white/10 text-[#5f5f5f] hover:border-white/16 hover:text-[#cfcfcf]"

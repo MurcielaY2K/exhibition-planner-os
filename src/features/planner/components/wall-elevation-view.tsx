@@ -228,6 +228,7 @@ export function WallElevationView({
         ref={svgRef}
         className="block h-[56svh] min-h-[420px] w-full bg-[linear-gradient(180deg,#111111_0%,#0a0a0a_100%)] sm:h-[620px]"
         viewBox={`0 0 ${wall.lengthMm} ${wall.heightMm}`}
+        style={{ touchAction: "none" }}
         onPointerMove={(event) => updateDrag(event.clientX, event.clientY)}
         onPointerUp={finishDrag}
         onPointerCancel={finishDrag}

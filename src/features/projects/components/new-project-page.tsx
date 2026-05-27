@@ -32,6 +32,12 @@ export function NewProjectPage() {
       description="This first setup creates one rectangular room with four generated walls, ready for wall placement, openings, installer checks, 3D review, and export."
     >
         <Card className="mt-6 p-6">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submit();
+            }}
+          >
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Project name">
               <input
@@ -91,9 +97,8 @@ export function NewProjectPage() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <button
-              type="button"
+              type="submit"
               className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
-              onClick={submit}
             >
               Create project and open overview
             </button>
@@ -105,6 +110,7 @@ export function NewProjectPage() {
               Cancel
             </button>
           </div>
+          </form>
         </Card>
     </AppFrame>
   );
@@ -123,11 +129,16 @@ function DimensionField({
     <Field label={`${label} (cm)`}>
       <input
         type="number"
-        min={0}
+        min={100}
+        max={50000}
         step={0.1}
+        required
         className={inputClassName}
         value={mmToCm(valueMm)}
-        onChange={(event) => onChange(cmToMm(Number(event.target.value) || 0))}
+        onChange={(event) => {
+          const raw = Number(event.target.value);
+          onChange(cmToMm(Math.max(100, Math.min(50000, raw || 100))));
+        }}
       />
     </Field>
   );

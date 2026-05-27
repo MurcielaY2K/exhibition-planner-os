@@ -49,6 +49,8 @@ interface ExhibitionState {
   updateArtwork: (projectId: string, artworkId: string, patch: Partial<Artwork>) => void;
   updateOpening: (projectId: string, openingId: string, patch: Partial<Opening>) => void;
   updateLight: (projectId: string, lightId: string, patch: Partial<ProjectLight>) => void;
+  deleteArtwork: (projectId: string, artworkId: string) => void;
+  deletePlacement: (projectId: string, placementId: string) => void;
   deleteOpening: (projectId: string, openingId: string) => void;
   deleteLight: (projectId: string, lightId: string) => void;
   placeArtworkOnWall: (projectId: string, artworkId: string, wallId: string) => void;
@@ -555,6 +557,60 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         };
       }),
     })),
+  deleteArtwork: (projectId, artworkId) =>
+    set((state) => ({
+      projects: state.projects.map((bundle) =>
+        bundle.project.id === projectId
+          ? {
+              ...bundle,
+              project: touchProject(bundle.project),
+              artworks: bundle.artworks.filter((artwork) => artwork.id !== artworkId),
+              placements: bundle.placements.filter(
+                (placement) => placement.artworkId !== artworkId,
+              ),
+            }
+          : bundle,
+      ),
+      ui: {
+        ...state.ui,
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          selectedArtworkId:
+            state.ui[projectId]?.selectedArtworkId === artworkId
+              ? undefined
+              : state.ui[projectId]?.selectedArtworkId,
+          selectedPlacementIds: [],
+          primaryPlacementId: undefined,
+        },
+      },
+    })),
+  deletePlacement: (projectId, placementId) =>
+    set((state) => ({
+      projects: state.projects.map((bundle) =>
+        bundle.project.id === projectId
+          ? {
+              ...bundle,
+              project: touchProject(bundle.project),
+              placements: bundle.placements.filter(
+                (placement) => placement.id !== placementId,
+              ),
+            }
+          : bundle,
+      ),
+      ui: {
+        ...state.ui,
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          selectedPlacementIds: (
+            state.ui[projectId]?.selectedPlacementIds ?? []
+          ).filter((id) => id !== placementId),
+          primaryPlacementId:
+            state.ui[projectId]?.primaryPlacementId === placementId
+              ? undefined
+              : state.ui[projectId]?.primaryPlacementId,
+        },
+      },
+    })),
   placeArtworkOnWall: (projectId, artworkId, wallId) =>
     set((state) => {
       let nextPlacementId: string | undefined;
@@ -811,6 +867,7 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
 
         return {
           ...bundle,
+          project: touchProject(bundle.project),
           placements: bundle.placements.map((placement) => {
             const patch = patches.find((entry) => entry.id === placement.id);
 
