@@ -130,5 +130,7 @@ export const seedSelection: Record<string, PlannerSelection> = {
     primaryPlacementId: "placement-blue-interval",
     activeView: "elevation",
     savedCameraViews: [],
+    wallColor: "#f4f0e8",
+    ambientLight: 82,
   },
 };

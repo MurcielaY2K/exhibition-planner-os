@@ -28,6 +28,7 @@ import {
   getSceneWallData,
   getWallFocusPreset,
   mmToSceneUnits,
+  type SceneWallData,
   WALL_THICKNESS_MM,
 } from "@/features/planner/lib/room-scene";
 
@@ -654,35 +655,17 @@ function SceneContent({
         ))}
 
       {wallData.map((entry) => {
-        const geometry = new THREE.ShapeGeometry(entry.shape);
-        geometry.translate(-entry.width / 2, -entry.height / 2, 0);
         const isSelected = entry.wall.id === selectedWall?.id;
 
         return (
-          <group
+          <WallMesh
             key={entry.wall.id}
-            position={entry.position}
-            rotation={[0, entry.rotationY, 0]}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelectWall(entry.wall.id);
-            }}
-          >
-            <mesh geometry={geometry} receiveShadow castShadow>
-              <meshStandardMaterial
-                color={isSelected ? wallColor : wallColor}
-                metalness={0}
-                roughness={0.96}
-                side={THREE.DoubleSide}
-                transparent
-                opacity={selectedWall && !isSelected ? 0.44 : 0.92}
-              />
-            </mesh>
-            <lineSegments>
-              <edgesGeometry args={[geometry]} />
-              <lineBasicMaterial color={isSelected ? "#7ec5d6" : "#66727d"} />
-            </lineSegments>
-          </group>
+            entry={entry}
+            isSelected={isSelected}
+            hasSelectedWall={!!selectedWall}
+            wallColor={wallColor}
+            onSelectWall={onSelectWall}
+          />
         );
       })}
 
@@ -759,9 +742,7 @@ function SceneContent({
               />
             </mesh>
             <lineSegments>
-              <edgesGeometry
-                args={[new THREE.BoxGeometry(data.width, data.height, data.depth)]}
-              />
+              <BoxEdgesGeometry width={data.width} height={data.height} depth={data.depth} />
               <lineBasicMaterial color={isSelected ? "#f4f7fb" : "#4a5661"} />
             </lineSegments>
             {artwork.imageUrl ? (
@@ -1084,4 +1065,75 @@ function kelvinToColor(kelvin: number) {
 
 function clampChannel(value: number) {
   return Math.max(0, Math.min(255, Number.isFinite(value) ? value : 0));
+}
+
+function WallMesh({
+  entry,
+  isSelected,
+  hasSelectedWall,
+  wallColor,
+  onSelectWall,
+}: {
+  entry: SceneWallData;
+  isSelected: boolean;
+  hasSelectedWall: boolean;
+  wallColor: string;
+  onSelectWall: (wallId: string) => void;
+}) {
+  const geometry = useMemo(() => {
+    const geo = new THREE.ShapeGeometry(entry.shape);
+    geo.translate(-entry.width / 2, -entry.height / 2, 0);
+    return geo;
+  }, [entry.shape, entry.width, entry.height]);
+
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <group
+      position={entry.position}
+      rotation={[0, entry.rotationY, 0]}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelectWall(entry.wall.id);
+      }}
+    >
+      <mesh geometry={geometry} receiveShadow castShadow>
+        <meshStandardMaterial
+          color={wallColor}
+          metalness={0}
+          roughness={0.96}
+          side={THREE.DoubleSide}
+          transparent
+          opacity={hasSelectedWall && !isSelected ? 0.44 : 0.92}
+        />
+      </mesh>
+      <lineSegments>
+        <edgesGeometry args={[geometry]} />
+        <lineBasicMaterial color={isSelected ? "#7ec5d6" : "#66727d"} />
+      </lineSegments>
+    </group>
+  );
+}
+
+function BoxEdgesGeometry({
+  width,
+  height,
+  depth,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  const box = useMemo(() => new THREE.BoxGeometry(width, height, depth), [width, height, depth]);
+  const edges = useMemo(() => new THREE.EdgesGeometry(box), [box]);
+
+  useEffect(
+    () => () => {
+      box.dispose();
+      edges.dispose();
+    },
+    [box, edges],
+  );
+
+  return <primitive object={edges} />;
 }

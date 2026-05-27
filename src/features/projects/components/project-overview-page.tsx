@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ProjectShell } from "@/components/project-shell";
 import { Card } from "@/components/ui/card";
 import { formatDimension } from "@/lib/domain/format";
 import { getProjectBundle, useExhibitionStore } from "@/lib/state/use-exhibition-store";
 
 export function ProjectOverviewPage({ projectId }: { projectId: string }) {
-  const bundle = useExhibitionStore((state) => getProjectBundle(state.projects, projectId));
+  const router = useRouter();
+  const { bundle, selectWall } = useExhibitionStore((state) => ({
+    bundle: getProjectBundle(state.projects, projectId),
+    selectWall: state.selectWall,
+  }));
 
   if (!bundle) {
     return null;
@@ -82,12 +87,16 @@ export function ProjectOverviewPage({ projectId }: { projectId: string }) {
                     <MiniMetric label="Artworks" value={placements.length.toString()} />
                     <MiniMetric label="Openings" value={openings.length.toString()} />
                     <div className="flex items-center justify-end">
-                      <Link
-                        href={`/projects/${projectId}/planner`}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          selectWall(projectId, wall.id);
+                          router.push(`/projects/${projectId}/planner`);
+                        }}
                         className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
                       >
                         Review wall
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 );

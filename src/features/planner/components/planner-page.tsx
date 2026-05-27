@@ -50,6 +50,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     updateLight,
     updatePlacement,
     updatePlacements,
+    updatePlannerUi,
     deleteArtwork,
     deletePlacement,
     deleteOpening,
@@ -96,8 +97,8 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     ? placementLabelMap.get(selectedPlacement.id) ?? "A1"
     : null;
   const [inspectorTab, setInspectorTab] = useState<"props" | "lights" | "plan">("props");
-  const [wallColor, setWallColor] = useState(WALL_COLOR_OPTIONS[0]);
-  const [ambientLight, setAmbientLight] = useState(82);
+  const wallColor = ui?.wallColor ?? WALL_COLOR_OPTIONS[0];
+  const ambientLight = ui?.ambientLight ?? 82;
   const [showAssetsPanel, setShowAssetsPanel] = useState(true);
   const [showInspectorPanel, setShowInspectorPanel] = useState(true);
   const plannerGridClassName =
@@ -622,7 +623,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       <button
                         key={color}
                         type="button"
-                        onClick={() => setWallColor(color)}
+                        onClick={() => updatePlannerUi(projectId, { wallColor: color })}
                         className={`h-11 w-11 border-2 ${
                           wallColor === color ? "border-[#ebff00]" : "border-white/12"
                         }`}
@@ -643,7 +644,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       min={20}
                       max={140}
                       value={ambientLight}
-                      onChange={(event) => setAmbientLight(Number(event.target.value))}
+                      onChange={(event) => updatePlannerUi(projectId, { ambientLight: Number(event.target.value) })}
                       className="h-px w-full appearance-none bg-white/12 accent-[#ebff00]"
                     />
                     <span className="w-8 text-right text-[11px] text-[#ebff00]">
@@ -657,10 +658,38 @@ export function PlannerPage({ projectId }: { projectId: string }) {
           ) : null}
 
           <div className="order-1 flex min-h-[60svh] min-w-0 flex-col bg-[#070707] xl:order-none">
-            <div className="flex items-center justify-center border-b border-white/8 px-4 py-3">
-              <div className="border border-white/8 bg-[#0d0d0d] px-4 py-1.5 text-[10px] uppercase tracking-[0.18em] text-[#6f6f6f]">
-                {ui.activeView === "spatial" ? "Orbit / Zoom / Pan" : "Move / Snap / Shift-select"}
-              </div>
+            {/* Mobile-only wall selector — desktop uses sidebar wall list */}
+            <div className="flex items-center gap-2 overflow-x-auto border-b border-white/8 bg-[#0e0e0e] px-3 py-2 scrollbar-subtle xl:hidden">
+              {bundle.walls.map((wall) => (
+                <button
+                  key={wall.id}
+                  type="button"
+                  onClick={() => selectWall(projectId, wall.id)}
+                  className={`shrink-0 border px-3 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
+                    selectedWall?.id === wall.id
+                      ? "border-[#ebff00]/60 bg-[#161616] text-[#ebff00]"
+                      : "border-white/10 text-[#7a7a7a]"
+                  }`}
+                >
+                  {wall.name.replace("Wall ", "")}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveView(
+                    projectId,
+                    ui.activeView === "spatial" ? "elevation" : "spatial",
+                  );
+                }}
+                className={`shrink-0 border px-3 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
+                  ui.activeView === "spatial"
+                    ? "border-[#ebff00]/60 bg-[#161616] text-[#ebff00]"
+                    : "border-white/10 text-[#7a7a7a]"
+                }`}
+              >
+                {ui.activeView === "spatial" ? "2D" : "3D"}
+              </button>
             </div>
             <div className="flex items-center justify-between border-b border-white/8 bg-[#0d0d0d] px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-[#696969]">
               <div className="flex items-center gap-3">
@@ -945,6 +974,7 @@ function useProjectPlanner(projectId: string) {
       updateLight: state.updateLight,
       updatePlacement: state.updatePlacement,
       updatePlacements: state.updatePlacements,
+      updatePlannerUi: state.updatePlannerUi,
       deleteArtwork: state.deleteArtwork,
       deletePlacement: state.deletePlacement,
       deleteOpening: state.deleteOpening,

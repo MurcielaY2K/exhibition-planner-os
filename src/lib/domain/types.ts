@@ -211,6 +211,8 @@ export interface PlannerSelection {
   primaryPlacementId?: string;
   activeView: PlannerView;
   savedCameraViews: SavedCameraView[];
+  wallColor: string;
+  ambientLight: number;
 }
 
 export interface ProjectBundle {

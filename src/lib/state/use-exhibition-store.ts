@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { formatDimension } from "@/lib/domain/format";
 import {
   clampOpeningToWall,
@@ -64,6 +65,7 @@ interface ExhibitionState {
     patches: Array<Pick<Placement, "id" | "xMm" | "yMm">>,
   ) => void;
   autoSequenceWallPlacements: (projectId: string, wallId: string) => void;
+  updatePlannerUi: (projectId: string, patch: Partial<Pick<PlannerSelection, "wallColor" | "ambientLight">>) => void;
   saveCameraView: (
     projectId: string,
     view: Omit<SavedCameraView, "id"> & { id?: string },
@@ -144,10 +146,14 @@ function ensurePlannerSelection(selection?: PlannerSelection): PlannerSelection 
     primaryPlacementId: selection?.primaryPlacementId,
     activeView: selection?.activeView ?? "elevation",
     savedCameraViews: selection?.savedCameraViews ?? [],
+    wallColor: selection?.wallColor ?? "#f4f0e8",
+    ambientLight: selection?.ambientLight ?? 82,
   };
 }
 
-export const useExhibitionStore = create<ExhibitionState>((set) => ({
+export const useExhibitionStore = create<ExhibitionState>()(
+  persist(
+    (set) => ({
   projects: [seedProject],
   ui: seedSelection,
   createProject: (input) => {
@@ -195,6 +201,8 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
           selectedPlacementIds: [],
           activeView: "elevation",
           savedCameraViews: [],
+          wallColor: "#f4f0e8",
+          ambientLight: 82,
         },
       },
     }));
@@ -931,6 +939,16 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         };
       }),
     })),
+  updatePlannerUi: (projectId, patch) =>
+    set((state) => ({
+      ui: {
+        ...state.ui,
+        [projectId]: {
+          ...ensurePlannerSelection(state.ui[projectId]),
+          ...patch,
+        },
+      },
+    })),
   saveCameraView: (projectId, view) => {
     let savedId: string | undefined;
 
@@ -979,7 +997,13 @@ export const useExhibitionStore = create<ExhibitionState>((set) => ({
         },
       };
     }),
-}));
+}),
+    {
+      name: "exhibition-planner-store",
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);
 
 export function getProjectRouteSummary(bundle: ProjectBundle) {
   const room = bundle.rooms[0];
