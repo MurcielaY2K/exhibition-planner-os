@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Field, inputClassName } from "@/components/ui/field";
 import { useShallow } from "zustand/react/shallow";
 import { cmToMm, formatArtworkSize, mmToCm } from "@/lib/domain/format";
-import { readFileAsDataUrl } from "@/lib/file";
+import { compressImageFile } from "@/lib/file";
 import {
   getProjectBundle,
   useExhibitionStore,
@@ -36,7 +36,7 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
   }
 
   async function handleArtworkImageSelect(artworkId: string, file: File) {
-    const imageUrl = await readFileAsDataUrl(file);
+    const imageUrl = await compressImageFile(file);
     updateArtwork(projectId, artworkId, { imageUrl });
   }
 

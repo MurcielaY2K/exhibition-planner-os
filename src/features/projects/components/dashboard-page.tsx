@@ -36,6 +36,24 @@ export function DashboardPage() {
             </p>
           </div>
 
+          {projects.length === 0 ? (
+            <div className="mt-4 rounded-[24px] border border-dashed border-[var(--line)] bg-[rgba(18,27,37,0.6)] px-8 py-16 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+                No projects yet
+              </p>
+              <p className="mt-3 text-base leading-7 text-[var(--foreground-soft)]">
+                Create your first project to start planning an exhibition.
+              </p>
+              <div className="mt-6 flex justify-center">
+                <Link
+                  href="/projects/new"
+                  className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
+                >
+                  New project
+                </Link>
+              </div>
+            </div>
+          ) : null}
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {projects.map((bundle) => {
               const room = bundle.rooms[0];
