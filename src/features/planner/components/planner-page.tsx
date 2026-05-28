@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { Room3DView } from "@/features/planner/components/room-3d-view";
+import { RoomPlanView } from "@/features/planner/components/room-plan-view";
 import { WallElevationView } from "@/features/planner/components/wall-elevation-view";
 import { Card } from "@/components/ui/card";
 import { mmToCm } from "@/lib/domain/format";
@@ -714,22 +715,20 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                   {wall.name.replace("Wall ", "")}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveView(
-                    projectId,
-                    ui.activeView === "spatial" ? "elevation" : "spatial",
-                  );
-                }}
-                className={`shrink-0 border px-3 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
-                  ui.activeView === "spatial"
-                    ? "border-[#ebff00]/60 bg-[#161616] text-[#ebff00]"
-                    : "border-white/10 text-[#7a7a7a]"
-                }`}
-              >
-                {ui.activeView === "spatial" ? "2D" : "3D"}
-              </button>
+              {(["elevation", "spatial", "plan"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setActiveView(projectId, view)}
+                  className={`shrink-0 border px-3 py-2 text-[11px] uppercase tracking-[0.18em] transition ${
+                    ui.activeView === view
+                      ? "border-[#ebff00]/60 bg-[#161616] text-[#ebff00]"
+                      : "border-white/10 text-[#7a7a7a]"
+                  }`}
+                >
+                  {view === "elevation" ? "2D" : view === "spatial" ? "3D" : "Top"}
+                </button>
+              ))}
             </div>
             <div className="flex items-center justify-between border-b border-white/8 bg-[#0d0d0d] px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-[#696969]">
               <div className="flex items-center gap-3">
@@ -739,13 +738,27 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 ) : null}
               </div>
               <div className="flex items-center gap-3">
-                <span>{ui.activeView === "spatial" ? "Spatial" : "Elevation"}</span>
+                <span>{ui.activeView === "spatial" ? "Spatial" : ui.activeView === "plan" ? "Floor plan" : "Elevation"}</span>
                 <span>{wallPlacements.length} works</span>
               </div>
             </div>
 
             <div className="relative flex-1 overflow-hidden">
-              {selectedWall ? (
+              {ui.activeView === "plan" ? (
+                <div className="h-full overflow-auto p-4">
+                  <RoomPlanView
+                    room={room}
+                    walls={bundle.walls}
+                    openings={bundle.openings}
+                    placements={bundle.placements}
+                    artworks={bundle.artworks}
+                    selectedWallId={selectedWall?.id}
+                    selectedOpeningId={ui.selectedOpeningId}
+                    onSelectWall={(wallId) => selectWall(projectId, wallId)}
+                    onSelectOpening={(openingId) => selectOpening(projectId, openingId)}
+                  />
+                </div>
+              ) : selectedWall ? (
                 ui.activeView === "spatial" ? (
                   <Room3DView
                     room={room}
@@ -810,7 +823,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 <div className="grid h-full min-h-[680px] place-items-center px-6 py-16 text-center text-sm text-[#6f6f6f]">
                   Select a wall
                 </div>
-              )}
+              ) }
 
               <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
                 <div className="pointer-events-auto flex items-center gap-1 border border-white/10 bg-[#0e0e0e]/96 px-2.5 py-2 shadow-[0_12px_28px_rgba(0,0,0,0.42)]">
@@ -823,6 +836,12 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     label="3D"
                     active={ui.activeView === "spatial"}
                     onClick={() => setActiveView(projectId, "spatial")}
+                  />
+                  <QuickActionButton
+                    label="Top"
+                    active={ui.activeView === "plan"}
+                    onClick={() => setActiveView(projectId, "plan")}
+                    title="Floor plan view"
                   />
                   {ui.activeView === "elevation" ? (
                     <QuickActionButton
@@ -952,6 +971,18 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                             </button>
                           </div>
                         ) : null}
+                      </div>
+                    ) : null}
+
+                    {selectedWall && wallPlacements.length >= 2 ? (
+                      <div className="border-t border-white/8 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => autoSequenceWallPlacements(projectId, selectedWall.id)}
+                          className="w-full border border-white/10 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a9a9a] transition hover:border-white/20 hover:text-[#f1f1f1]"
+                        >
+                          Auto-sequence wall
+                        </button>
                       </div>
                     ) : null}
                   </div>
