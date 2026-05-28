@@ -5,6 +5,7 @@ import {
   DRILL_OPENING_CLEARANCE_MM,
   DRILL_POINT_CLEARANCE_MM,
   DRILL_TOP_CLEARANCE_MM,
+  getHighestSeverity,
   getOpeningBoundingBox,
   getPlacementBoundingBox,
   getPlacementCenterlineMm,
@@ -1421,20 +1422,6 @@ function compactInstallerNotes(row: ArtworkExportRow) {
   ].filter(Boolean);
 
   return parts.join(" / ") || "Standard handling";
-}
-
-function getHighestSeverity(
-  warnings: DrillPointWarning[],
-): DrillPointWarning["severity"] | null {
-  if (warnings.some((warning) => warning.severity === "error")) {
-    return "error";
-  }
-
-  if (warnings.some((warning) => warning.severity === "warning")) {
-    return "warning";
-  }
-
-  return null;
 }
 
 function truncateText(value: string, maxLength: number) {

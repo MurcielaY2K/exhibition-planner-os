@@ -5,6 +5,7 @@ import {
   STANDARD_CENTERLINE_MM,
   arePlacementsValidOnWall,
   clampGroupDeltaToWall,
+  getHighestSeverity,
   getOpeningBoundingBox,
   getPlacementBoundingBox,
   getPlacementCenterlineMm,
@@ -1050,20 +1051,6 @@ function fitPlacementsToWall(placements: Placement[], wall: Wall) {
   return placements.map((placement) =>
     translatePlacement(placement, correctionX, correctionY),
   );
-}
-
-function getHighestSeverity(
-  warnings: DrillPointWarning[],
-): DrillPointWarning["severity"] | null {
-  if (warnings.some((warning) => warning.severity === "error")) {
-    return "error";
-  }
-
-  if (warnings.some((warning) => warning.severity === "warning")) {
-    return "warning";
-  }
-
-  return null;
 }
 
 function buildPlacementLabelMap(placements: Placement[]) {
