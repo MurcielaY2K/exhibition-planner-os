@@ -48,6 +48,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     addOpening,
     addLight,
     placeArtworkOnWall,
+    updateRoom,
     updateArtwork,
     updateOpening,
     updateLight,
@@ -199,6 +200,32 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     Room
                   </p>
                   <p className="mt-1.5 text-[12px] font-medium text-[#f1efe6]">{room.name}</p>
+                  <div className="mt-2.5 grid grid-cols-3 gap-1">
+                    {(["W", "D", "H"] as const).map((axis) => {
+                      const key = axis === "W" ? "widthMm" : axis === "D" ? "depthMm" : "heightMm";
+                      return (
+                        <label key={axis} className="grid gap-1">
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">
+                            {axis}
+                          </span>
+                          <input
+                            type="number"
+                            step={1}
+                            min={100}
+                            max={50000}
+                            value={Math.round(room[key] / 10)}
+                            onChange={(event) =>
+                              updateRoom(projectId, room.id, {
+                                [key]: Math.max(100, Math.min(50000, Number(event.target.value) || 100)) * 10,
+                              })
+                            }
+                            className="w-full border border-white/8 bg-[#131313] px-1.5 py-1 text-[11px] text-[#c9c8c1] outline-none transition focus:border-white/16"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-[#4a4a4a]">cm</p>
                 </div>
 
                 <div className="mb-4">
@@ -1144,6 +1171,7 @@ function useProjectPlanner(projectId: string) {
       addOpening: state.addOpening,
       addLight: state.addLight,
       placeArtworkOnWall: state.placeArtworkOnWall,
+      updateRoom: state.updateRoom,
       updateArtwork: state.updateArtwork,
       updateOpening: state.updateOpening,
       updateLight: state.updateLight,
