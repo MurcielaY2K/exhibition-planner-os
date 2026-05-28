@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   STANDARD_CENTERLINE_MM,
   arePlacementsValidOnWall,
@@ -12,6 +12,7 @@ import {
   getPlacementGroupBounds,
   getPlacementHangingPoints,
   getPlacementValidation,
+  nudgePlacementsOnWall,
   snapPlacementOnWall,
   translatePlacement,
   visualGuidesFromSnapGuides,
@@ -71,6 +72,7 @@ export function WallElevationView({
   selectedOpeningId,
   selectedPlacementIds,
   visualGuides,
+  multiSelectMode = false,
   onSelectOpening,
   onSelectPlacement,
   onUpdatePlacement,
@@ -86,6 +88,7 @@ export function WallElevationView({
   selectedOpeningId?: string;
   selectedPlacementIds: string[];
   visualGuides?: VisualGuide[];
+  multiSelectMode?: boolean;
   onSelectOpening: (openingId: string) => void;
   onSelectPlacement: (placementId: string, additive: boolean) => void;
   onUpdatePlacement: (placementId: string, patch: Partial<Placement>) => void;
@@ -93,6 +96,47 @@ export function WallElevationView({
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
+
+  useEffect(() => {
+    const NUDGE_MM = 10;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!selectedPlacementIds.length) return;
+      const tag = (event.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      const dirMap: Record<string, [number, number]> = {
+        ArrowLeft: [-NUDGE_MM, 0],
+        ArrowRight: [NUDGE_MM, 0],
+        ArrowUp: [0, NUDGE_MM],
+        ArrowDown: [0, -NUDGE_MM],
+      };
+
+      const delta = dirMap[event.key];
+      if (!delta) return;
+      event.preventDefault();
+
+      const selected = placements.filter((p) => selectedPlacementIds.includes(p.id));
+      const stationary = placements.filter((p) => !selectedPlacementIds.includes(p.id));
+      const step = event.shiftKey ? NUDGE_MM * 10 : NUDGE_MM;
+      const result = nudgePlacementsOnWall(
+        selected,
+        stationary,
+        wall,
+        delta[0] * (step / NUDGE_MM),
+        delta[1] * (step / NUDGE_MM),
+        openings,
+      );
+
+      if (result.applied) {
+        onUpdatePlacements(result.placements.map((p) => ({ id: p.id, xMm: p.xMm, yMm: p.yMm })));
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPlacementIds, placements, wall, openings, onUpdatePlacements]);
+
   const tickMarks = Array.from(
     { length: Math.floor(wall.lengthMm / 500) + 1 },
     (_, index) => index * 500,
@@ -467,7 +511,7 @@ export function WallElevationView({
             <g
               key={placement.id}
               onPointerDown={(event) => {
-                if (event.shiftKey) {
+                if (event.shiftKey || multiSelectMode) {
                   onSelectPlacement(placement.id, true);
                   return;
                 }

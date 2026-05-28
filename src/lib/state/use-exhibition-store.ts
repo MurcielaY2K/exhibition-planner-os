@@ -4,8 +4,10 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { formatDimension } from "@/lib/domain/format";
 import {
+  alignPlacementsOnWall,
   clampOpeningToWall,
   clampPlacementToWall,
+  distributePlacementsOnWall,
   findNearestValidPlacementOnWall,
   snapPlacementOnWall,
   syncPlacementSize,
@@ -13,8 +15,10 @@ import {
 import { createWallsForRoom, syncWallsWithRoom } from "@/lib/domain/rooms";
 import { seedProject, seedSelection } from "@/lib/domain/seed";
 import type {
+  AlignmentMode,
   Artwork,
   CreateProjectInput,
+  DistributionMode,
   MountType,
   Opening,
   OpeningType,
@@ -65,6 +69,8 @@ interface ExhibitionState {
     patches: Array<Pick<Placement, "id" | "xMm" | "yMm">>,
   ) => void;
   autoSequenceWallPlacements: (projectId: string, wallId: string) => void;
+  alignSelectedPlacements: (projectId: string, mode: AlignmentMode) => void;
+  distributeSelectedPlacements: (projectId: string, mode: DistributionMode) => void;
   updatePlannerUi: (projectId: string, patch: Partial<Pick<PlannerSelection, "wallColor" | "ambientLight">>) => void;
   saveCameraView: (
     projectId: string,
@@ -939,6 +945,67 @@ export const useExhibitionStore = create<ExhibitionState>()(
         };
       }),
     })),
+  alignSelectedPlacements: (projectId, mode) =>
+    set((state) => {
+      const ui = state.ui[projectId];
+      const selectedIds = ui?.selectedPlacementIds ?? [];
+      if (selectedIds.length < 2) return state;
+
+      return {
+        projects: state.projects.map((bundle) => {
+          if (bundle.project.id !== projectId) return bundle;
+          const selected = bundle.placements.filter((p) => selectedIds.includes(p.id));
+          const stationary = bundle.placements.filter((p) => !selectedIds.includes(p.id));
+          const wall = bundle.walls.find((w) => w.id === selected[0]?.wallId);
+          if (!wall) return bundle;
+          const result = alignPlacementsOnWall(
+            selected,
+            stationary,
+            wall,
+            ui?.primaryPlacementId,
+            mode,
+            bundle.openings,
+          );
+          if (!result.applied) return bundle;
+          const resultMap = new Map(result.placements.map((p) => [p.id, p]));
+          return {
+            ...bundle,
+            project: touchProject(bundle.project),
+            placements: bundle.placements.map((p) => resultMap.get(p.id) ?? p),
+          };
+        }),
+      };
+    }),
+  distributeSelectedPlacements: (projectId, mode) =>
+    set((state) => {
+      const ui = state.ui[projectId];
+      const selectedIds = ui?.selectedPlacementIds ?? [];
+      if (selectedIds.length < 3) return state;
+
+      return {
+        projects: state.projects.map((bundle) => {
+          if (bundle.project.id !== projectId) return bundle;
+          const selected = bundle.placements.filter((p) => selectedIds.includes(p.id));
+          const stationary = bundle.placements.filter((p) => !selectedIds.includes(p.id));
+          const wall = bundle.walls.find((w) => w.id === selected[0]?.wallId);
+          if (!wall) return bundle;
+          const result = distributePlacementsOnWall(
+            selected,
+            stationary,
+            wall,
+            mode,
+            bundle.openings,
+          );
+          if (!result.applied) return bundle;
+          const resultMap = new Map(result.placements.map((p) => [p.id, p]));
+          return {
+            ...bundle,
+            project: touchProject(bundle.project),
+            placements: bundle.placements.map((p) => resultMap.get(p.id) ?? p),
+          };
+        }),
+      };
+    }),
   updatePlannerUi: (projectId, patch) =>
     set((state) => ({
       ui: {

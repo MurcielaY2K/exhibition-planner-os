@@ -40,6 +40,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     setActiveView,
     selectWall,
     selectArtwork,
+    selectOpening,
     selectLight,
     selectPlacement,
     addArtwork,
@@ -47,6 +48,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     addLight,
     placeArtworkOnWall,
     updateArtwork,
+    updateOpening,
     updateLight,
     updatePlacement,
     updatePlacements,
@@ -55,6 +57,9 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     deletePlacement,
     deleteOpening,
     deleteLight,
+    alignSelectedPlacements,
+    distributeSelectedPlacements,
+    autoSequenceWallPlacements,
     saveCameraView,
     deleteCameraView,
   } = useProjectPlanner(projectId);
@@ -85,6 +90,10 @@ export function PlannerPage({ projectId }: { projectId: string }) {
       ) ?? null,
     [bundle, selectedPlacement?.artworkId, ui?.selectedArtworkId],
   );
+  const selectedOpening = useMemo(
+    () => bundle?.openings.find((opening) => opening.id === ui?.selectedOpeningId) ?? null,
+    [bundle, ui?.selectedOpeningId],
+  );
   const selectedLight = useMemo(
     () => bundle?.lights.find((light) => light.id === ui?.selectedLightId) ?? null,
     [bundle, ui?.selectedLightId],
@@ -97,6 +106,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
     ? placementLabelMap.get(selectedPlacement.id) ?? "A1"
     : null;
   const [inspectorTab, setInspectorTab] = useState<"props" | "lights" | "plan">("props");
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
   const wallColor = ui?.wallColor ?? WALL_COLOR_OPTIONS[0];
   const ambientLight = ui?.ambientLight ?? 82;
   const [showAssetsPanel, setShowAssetsPanel] = useState(true);
@@ -216,14 +226,14 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                           }`}
                         >
                           <div>
-                            <span className="block text-[10px] uppercase tracking-[0.18em]">
+                            <span className="block text-[12px] uppercase tracking-[0.18em]">
                               {wall.name}
                             </span>
-                            <span className="mt-1 block text-[10px] text-[#6f6d67]">
+                            <span className="mt-1 block text-[12px] text-[#6f6d67]">
                               {formatCompactCm(wall.lengthMm)} x {formatCompactCm(wall.heightMm)}
                             </span>
                           </div>
-                          <span className="text-[10px] text-[#ebff00]">
+                          <span className="text-[12px] text-[#ebff00]">
                             P{placementCount} O{openingCount}
                           </span>
                         </button>
@@ -460,6 +470,36 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       </select>
                     </label>
 
+                    <label className="grid gap-1.5">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+                        Notes
+                      </span>
+                      <input
+                        value={selectedPlacement.installNotes}
+                        placeholder="Install notes"
+                        onChange={(event) =>
+                          updatePlacement(projectId, selectedPlacement.id, {
+                            installNotes: event.target.value,
+                          })
+                        }
+                        className="w-full border border-white/10 bg-[#151515] px-3 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/20"
+                      />
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlacement.requiresTeamLift}
+                        onChange={(event) =>
+                          updatePlacement(projectId, selectedPlacement.id, {
+                            requiresTeamLift: event.target.checked,
+                          })
+                        }
+                        className="accent-[#ebff00]"
+                      />
+                      <span className="text-[12px] text-[#c9c8c1]">Requires team lift</span>
+                    </label>
+
                     <button
                       type="button"
                       onClick={() => deletePlacement(projectId, selectedPlacement.id)}
@@ -500,10 +540,10 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         }`}
                       >
                         <div>
-                          <span className="block text-[10px] uppercase tracking-[0.16em]">
+                          <span className="block text-[12px] uppercase tracking-[0.16em]">
                             {light.label}
                           </span>
-                          <span className="mt-1 block text-[10px] text-[#6f6d67]">
+                          <span className="mt-1 block text-[12px] text-[#6f6d67]">
                             {light.temperatureK}K / {light.intensity}
                           </span>
                         </div>
@@ -730,6 +770,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       deleteCameraView(projectId, cameraViewId)
                     }
                     embedded
+                    multiSelectMode={multiSelectMode}
                     wallColor={wallColor}
                     ambientIntensity={ambientLight / 100}
                   />
@@ -754,12 +795,15 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     }
                     selectedPlacementIds={ui.selectedPlacementIds}
                     selectedOpeningId={ui.selectedOpeningId}
-                    onSelectOpening={() => undefined}
+                    onSelectOpening={(openingId) => {
+                      selectOpening(projectId, openingId);
+                    }}
                     onSelectPlacement={handleSelectPlacement}
                     onUpdatePlacement={(placementId, patch) =>
                       updatePlacement(projectId, placementId, patch)
                     }
                     onUpdatePlacements={(patches) => updatePlacements(projectId, patches)}
+                    multiSelectMode={multiSelectMode}
                   />
                 )
               ) : (
@@ -780,6 +824,14 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                     active={ui.activeView === "spatial"}
                     onClick={() => setActiveView(projectId, "spatial")}
                   />
+                  {ui.activeView === "elevation" ? (
+                    <QuickActionButton
+                      label="+"
+                      active={multiSelectMode}
+                      onClick={() => setMultiSelectMode((v) => !v)}
+                      title="Multi-select mode"
+                    />
+                  ) : null}
                   <QuickActionButton
                     label="P"
                     active={inspectorTab === "props"}
@@ -864,10 +916,100 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         value={selectedPlacement.isLocked ? "Locked" : "Free"}
                       />
                     </div>
+
+                    {ui.selectedPlacementIds.length >= 2 ? (
+                      <div className="space-y-2 border-t border-white/8 pt-3">
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+                          Align {ui.selectedPlacementIds.length} selected
+                        </p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(["left", "horizontal-center", "right", "top", "centerline", "bottom"] as const).map((mode) => (
+                            <button
+                              key={mode}
+                              type="button"
+                              onClick={() => alignSelectedPlacements(projectId, mode)}
+                              className="border border-white/10 py-1.5 text-[11px] uppercase tracking-[0.12em] text-[#9a9a9a] transition hover:border-white/20 hover:text-[#f1f1f1]"
+                            >
+                              {mode.replace("horizontal-", "H-").replace("centerline", "CL")}
+                            </button>
+                          ))}
+                        </div>
+                        {ui.selectedPlacementIds.length >= 3 ? (
+                          <div className="grid grid-cols-2 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => distributeSelectedPlacements(projectId, "horizontal")}
+                              className="border border-white/10 py-1.5 text-[11px] uppercase tracking-[0.12em] text-[#9a9a9a] transition hover:border-white/20 hover:text-[#f1f1f1]"
+                            >
+                              Dist H
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => distributeSelectedPlacements(projectId, "vertical")}
+                              className="border border-white/10 py-1.5 text-[11px] uppercase tracking-[0.12em] text-[#9a9a9a] transition hover:border-white/20 hover:text-[#f1f1f1]"
+                            >
+                              Dist V
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : selectedOpening ? (
+                  <div className="space-y-3">
+                    <div className="border-b border-white/8 pb-4">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-[#7a7a7a]">
+                        {selectedOpening.type}
+                      </p>
+                      <h3 className="mt-1.5 text-[13px] font-semibold text-[#f1f1f1]">
+                        {selectedOpening.label}
+                      </h3>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="grid gap-1">
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">Label</span>
+                        <input
+                          value={selectedOpening.label}
+                          onChange={(event) =>
+                            updateOpening(projectId, selectedOpening.id, { label: event.target.value })
+                          }
+                          className="w-full border border-white/10 bg-[#151515] px-3 py-1.5 text-[12px] text-[#e8e8e8] outline-none"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <CompactInput
+                        label="X (cm)"
+                        value={Math.round(selectedOpening.xMm / 10)}
+                        onChange={(v) => updateOpening(projectId, selectedOpening.id, { xMm: v * 10 })}
+                      />
+                      <CompactInput
+                        label="Y (cm)"
+                        value={Math.round(selectedOpening.yMm / 10)}
+                        onChange={(v) => updateOpening(projectId, selectedOpening.id, { yMm: v * 10 })}
+                      />
+                      <CompactInput
+                        label="W (cm)"
+                        value={Math.round(selectedOpening.widthMm / 10)}
+                        onChange={(v) => updateOpening(projectId, selectedOpening.id, { widthMm: v * 10 })}
+                      />
+                      <CompactInput
+                        label="H (cm)"
+                        value={Math.round(selectedOpening.heightMm / 10)}
+                        onChange={(v) => updateOpening(projectId, selectedOpening.id, { heightMm: v * 10 })}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteOpening(projectId, selectedOpening.id)}
+                      className="w-full border border-white/10 py-2 text-[11px] uppercase tracking-[0.18em] text-[#9a9a9a] transition hover:border-[#ff7b72]/40 hover:text-[#ff7b72]"
+                    >
+                      Delete opening
+                    </button>
                   </div>
                 ) : (
-                  <div className="pt-8 text-center text-[10px] uppercase tracking-[0.22em] text-[#666]">
-                    Select artwork
+                  <div className="pt-8 text-center text-[12px] uppercase tracking-[0.22em] text-[#666]">
+                    Select artwork or opening
                   </div>
                 )
               ) : null}
@@ -940,7 +1082,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
           ) : null}
         </section>
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 bg-[#0f0f0f] px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-[#6e6e6e]">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 bg-[#0f0f0f] px-3 py-2 text-[12px] uppercase tracking-[0.18em] text-[#6e6e6e]">
           <div className="flex flex-wrap items-center gap-2">
             <FooterPill label="Room" value={room.name} />
             <FooterPill label="Placed" value={bundle.placements.length.toString()} />
@@ -964,6 +1106,7 @@ function useProjectPlanner(projectId: string) {
       setActiveView: state.setActiveView,
       selectWall: state.selectWall,
       selectArtwork: state.selectArtwork,
+      selectOpening: state.selectOpening,
       selectLight: state.selectLight,
       selectPlacement: state.selectPlacement,
       addArtwork: state.addArtwork,
@@ -971,6 +1114,7 @@ function useProjectPlanner(projectId: string) {
       addLight: state.addLight,
       placeArtworkOnWall: state.placeArtworkOnWall,
       updateArtwork: state.updateArtwork,
+      updateOpening: state.updateOpening,
       updateLight: state.updateLight,
       updatePlacement: state.updatePlacement,
       updatePlacements: state.updatePlacements,
@@ -979,6 +1123,9 @@ function useProjectPlanner(projectId: string) {
       deletePlacement: state.deletePlacement,
       deleteOpening: state.deleteOpening,
       deleteLight: state.deleteLight,
+      alignSelectedPlacements: state.alignSelectedPlacements,
+      distributeSelectedPlacements: state.distributeSelectedPlacements,
+      autoSequenceWallPlacements: state.autoSequenceWallPlacements,
       saveCameraView: state.saveCameraView,
       deleteCameraView: state.deleteCameraView,
     })),
@@ -1080,15 +1227,18 @@ function QuickActionButton({
   label,
   active = false,
   onClick,
+  title,
 }: {
   label: string;
   active?: boolean;
   onClick: () => void;
+  title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={title}
       className={`grid h-[44px] min-w-[44px] place-items-center border px-2 text-[11px] uppercase tracking-[0.18em] ${
         active
           ? "border-[#ebff00] bg-[#151515] text-[#ebff00]"

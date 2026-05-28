@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -63,6 +63,7 @@ export function Room3DView({
   onSaveCameraView,
   onDeleteCameraView,
   embedded = false,
+  multiSelectMode = false,
   wallColor = "#cfd8de",
   ambientIntensity = 0.82,
 }: {
@@ -86,6 +87,7 @@ export function Room3DView({
   ) => string | undefined;
   onDeleteCameraView: (cameraViewId: string) => void;
   embedded?: boolean;
+  multiSelectMode?: boolean;
   wallColor?: string;
   ambientIntensity?: number;
 }) {
@@ -107,6 +109,9 @@ export function Room3DView({
     ...getRoomOverviewPreset(room),
     wallId: undefined,
   });
+  const handleCameraSnapshot = useCallback((snapshot: CameraSnapshot) => {
+    cameraSnapshotRef.current = snapshot;
+  }, []);
   const [cameraIntent, setCameraIntent] = useState<CameraIntent>("free");
   const [presentationMode, setPresentationMode] = useState(false);
   const [viewsPanelOpen, setViewsPanelOpen] = useState(false);
@@ -226,9 +231,8 @@ export function Room3DView({
       presentationMode={presentationMode}
       wallColor={wallColor}
       ambientIntensity={ambientIntensity}
-      onCameraSnapshot={(snapshot) => {
-        cameraSnapshotRef.current = snapshot;
-      }}
+      multiSelectMode={multiSelectMode}
+      onCameraSnapshot={handleCameraSnapshot}
       onSelectWall={onSelectWall}
       onSelectLight={onSelectLight}
       onSelectPlacement={onSelectPlacement}
@@ -408,6 +412,7 @@ function SceneViewport({
   presentationMode,
   wallColor,
   ambientIntensity,
+  multiSelectMode,
   onCameraSnapshot,
   onSelectWall,
   onSelectLight,
@@ -427,6 +432,7 @@ function SceneViewport({
   presentationMode: boolean;
   wallColor: string;
   ambientIntensity: number;
+  multiSelectMode: boolean;
   onCameraSnapshot: (snapshot: CameraSnapshot) => void;
   onSelectWall: (wallId: string) => void;
   onSelectLight: (lightId?: string) => void;
@@ -460,6 +466,7 @@ function SceneViewport({
             selectedPlacementIds={selectedPlacementIds}
             cameraRequest={cameraRequest}
             wallColor={wallColor}
+            multiSelectMode={multiSelectMode}
             onCameraSnapshot={onCameraSnapshot}
             onSelectWall={onSelectWall}
             onSelectLight={onSelectLight}
@@ -484,6 +491,7 @@ function SceneContent({
   selectedPlacementIds,
   cameraRequest,
   wallColor,
+  multiSelectMode,
   onCameraSnapshot,
   onSelectWall,
   onSelectLight,
@@ -501,6 +509,7 @@ function SceneContent({
   selectedPlacementIds: string[];
   cameraRequest: CameraRequest;
   wallColor: string;
+  multiSelectMode: boolean;
   onCameraSnapshot: (snapshot: CameraSnapshot) => void;
   onSelectWall: (wallId: string) => void;
   onSelectLight: (lightId?: string) => void;
@@ -726,7 +735,7 @@ function SceneContent({
             rotation={[0, data.rotationY, 0]}
             onClick={(event) => {
               event.stopPropagation();
-              onSelectPlacement(placement.id, event.shiftKey);
+              onSelectPlacement(placement.id, event.shiftKey || multiSelectMode);
             }}
           >
             <mesh castShadow receiveShadow>
