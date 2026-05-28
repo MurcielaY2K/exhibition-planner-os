@@ -1349,3 +1349,18 @@ function getSnapGuideLabel(guide: SnapGuide) {
 
   return "Artwork edge";
 }
+
+
+export function getHighestSeverity(
+  warnings: DrillPointWarning[],
+): DrillPointWarning["severity"] | null {
+  if (warnings.some((warning) => warning.severity === "error")) {
+    return "error";
+  }
+
+  if (warnings.some((warning) => warning.severity === "warning")) {
+    return "warning";
+  }
+
+  return null;
+}
