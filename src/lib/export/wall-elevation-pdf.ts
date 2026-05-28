@@ -957,6 +957,7 @@ function drawAnnotationTables(
   const tableLeftPt = PAGE_MARGIN_PT + layout.leftRegionWidthPt + CONTENT_GUTTER_PT;
   const topPt = layout.wallTopPt + 8;
   const tableWidthPt = TABLE_WIDTH_PT;
+  const bottomGuard = PAGE_MARGIN_PT + 12;
   let cursorY = topPt;
 
   writer.addText("Artwork Schedule", tableLeftPt, cursorY, {
@@ -965,7 +966,7 @@ function drawAnnotationTables(
     color: TECH_BLACK,
   });
   cursorY -= 16;
-  cursorY = drawArtworkTable(writer, artworkRows, tableLeftPt, cursorY, tableWidthPt);
+  cursorY = drawArtworkTable(writer, artworkRows, tableLeftPt, cursorY, tableWidthPt, bottomGuard);
   if (installerMode) {
     cursorY -= 18;
     writer.addText("Installer Details", tableLeftPt, cursorY, {
@@ -974,7 +975,7 @@ function drawAnnotationTables(
       color: TECH_BLACK,
     });
     cursorY -= 16;
-    cursorY = drawInstallerTable(writer, artworkRows, tableLeftPt, cursorY, tableWidthPt);
+    cursorY = drawInstallerTable(writer, artworkRows, tableLeftPt, cursorY, tableWidthPt, bottomGuard);
     writer.addText(
       `Key checks: edge and opening clearance, drill spacing, and mount suitability. Error thresholds: edges < ${formatCentimetersCompact(DRILL_EDGE_CLEARANCE_MM)} cm, openings < ${formatCentimetersCompact(DRILL_OPENING_CLEARANCE_MM)} cm, drill spacing < ${formatCentimetersCompact(DRILL_POINT_CLEARANCE_MM)} cm, drill height < ${formatCentimetersCompact(DRILL_MIN_HEIGHT_MM)} cm, top clearance < ${formatCentimetersCompact(DRILL_TOP_CLEARANCE_MM)} cm.`,
       tableLeftPt,
@@ -1035,7 +1036,9 @@ function drawAnnotationTables(
     color: TECH_BLACK,
   });
   cursorY -= 16;
-  drawOpeningTable(writer, openingRows, tableLeftPt, cursorY, tableWidthPt);
+  if (cursorY > bottomGuard + 44) {
+    drawOpeningTable(writer, openingRows, tableLeftPt, cursorY, tableWidthPt, bottomGuard);
+  }
 }
 
 function drawArtworkTable(
@@ -1044,17 +1047,21 @@ function drawArtworkTable(
   leftPt: number,
   topPt: number,
   widthPt: number,
+  bottomGuard = PAGE_MARGIN_PT,
 ) {
   const rowHeight = 22;
   const headerHeight = 22;
-  const totalHeight = headerHeight + rows.length * rowHeight;
+  const maxRows = Math.max(0, Math.floor((topPt - headerHeight - bottomGuard) / rowHeight));
+  const visibleRows = rows.slice(0, maxRows);
+  const overflow = rows.length - visibleRows.length;
+  const totalHeight = headerHeight + visibleRows.length * rowHeight;
   const columns = [30, 68, 90, 52, 44, 50];
   const headers = ["ID", "Artist", "Title", "Size", "Left", "C/L"];
 
   drawTableFrame(writer, leftPt, topPt - totalHeight, widthPt, totalHeight, columns);
   drawTableHeader(writer, leftPt, topPt, headers, columns);
 
-  rows.forEach((row, index) => {
+  visibleRows.forEach((row, index) => {
     const rowTop = topPt - headerHeight - index * rowHeight;
     writer.addLine(leftPt, rowTop, leftPt + widthPt, rowTop, {
       width: 0.35,
@@ -1072,7 +1079,17 @@ function drawArtworkTable(
     drawTableRow(writer, leftPt, baselineY, values, columns);
   });
 
-  return topPt - totalHeight;
+  let bottomY = topPt - totalHeight;
+  if (overflow > 0) {
+    bottomY -= 10;
+    writer.addText(`+ ${overflow} more — download full exhibition export for complete schedule`, leftPt, bottomY, {
+      size: 7.4,
+      color: TECH_MID,
+    });
+    bottomY -= 8;
+  }
+
+  return bottomY;
 }
 
 function drawOpeningTable(
@@ -1081,17 +1098,20 @@ function drawOpeningTable(
   leftPt: number,
   topPt: number,
   widthPt: number,
+  bottomGuard = PAGE_MARGIN_PT,
 ) {
   const rowHeight = 22;
   const headerHeight = 22;
-  const totalHeight = headerHeight + rows.length * rowHeight;
+  const maxRows = Math.max(0, Math.floor((topPt - headerHeight - bottomGuard) / rowHeight));
+  const visibleRows = rows.slice(0, maxRows);
+  const totalHeight = headerHeight + visibleRows.length * rowHeight;
   const columns = [30, 60, 58, 54, 50, 48];
   const headers = ["ID", "Type", "Label", "Size", "Left", "Bottom"];
 
   drawTableFrame(writer, leftPt, topPt - totalHeight, widthPt, totalHeight, columns);
   drawTableHeader(writer, leftPt, topPt, headers, columns);
 
-  rows.forEach((row, index) => {
+  visibleRows.forEach((row, index) => {
     const rowTop = topPt - headerHeight - index * rowHeight;
     writer.addLine(leftPt, rowTop, leftPt + widthPt, rowTop, {
       width: 0.35,
@@ -1116,17 +1136,20 @@ function drawInstallerTable(
   leftPt: number,
   topPt: number,
   widthPt: number,
+  bottomGuard = PAGE_MARGIN_PT,
 ) {
   const rowHeight = 24;
   const headerHeight = 22;
-  const totalHeight = headerHeight + rows.length * rowHeight;
+  const maxRows = Math.max(0, Math.floor((topPt - headerHeight - bottomGuard) / rowHeight));
+  const visibleRows = rows.slice(0, maxRows);
+  const totalHeight = headerHeight + visibleRows.length * rowHeight;
   const columns = [28, 32, 30, 60, 150];
   const headers = ["ID", "Ord", "Lock", "Mount", "Drill / risk notes"];
 
   drawTableFrame(writer, leftPt, topPt - totalHeight, widthPt, totalHeight, columns);
   drawTableHeader(writer, leftPt, topPt, headers, columns);
 
-  rows.forEach((row, index) => {
+  visibleRows.forEach((row, index) => {
     const rowTop = topPt - headerHeight - index * rowHeight;
     writer.addLine(leftPt, rowTop, leftPt + widthPt, rowTop, {
       width: 0.35,
