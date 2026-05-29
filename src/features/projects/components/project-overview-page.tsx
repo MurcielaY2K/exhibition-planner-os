@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useShallow } from "zustand/react/shallow";
 import { ProjectShell } from "@/components/project-shell";
 import { Card } from "@/components/ui/card";
 import { formatDimension } from "@/lib/domain/format";
@@ -9,10 +10,12 @@ import { getProjectBundle, useExhibitionStore } from "@/lib/state/use-exhibition
 
 export function ProjectOverviewPage({ projectId }: { projectId: string }) {
   const router = useRouter();
-  const { bundle, selectWall } = useExhibitionStore((state) => ({
-    bundle: getProjectBundle(state.projects, projectId),
-    selectWall: state.selectWall,
-  }));
+  const { bundle, selectWall } = useExhibitionStore(
+    useShallow((state) => ({
+      bundle: getProjectBundle(state.projects, projectId),
+      selectWall: state.selectWall,
+    })),
+  );
 
   if (!bundle) {
     return null;
