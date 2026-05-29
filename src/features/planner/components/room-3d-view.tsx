@@ -250,7 +250,7 @@ export function Room3DView({
         <div className="border-b border-[var(--line)] bg-[#101010] px-4 py-2.5 sm:px-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-strong)]">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-strong)]">
                 3D
               </span>
               <SceneBadge value={selectedWall?.name ?? room.name} />
@@ -302,7 +302,7 @@ export function Room3DView({
           {viewsPanelOpen ? (
             <div className="grid gap-3 border border-[var(--line)] bg-[rgba(12,12,12,0.88)] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)] sm:p-4">
               <label className="grid gap-2">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-strong)]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--muted-strong)]">
                   Save view
                 </span>
                 <input
@@ -333,7 +333,7 @@ export function Room3DView({
                         <p className="truncate text-sm font-medium text-[var(--foreground)]">
                           {view.name}
                         </p>
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[var(--muted-strong)]">
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-[var(--muted-strong)]">
                           {view.wallId
                             ? walls.find((wall) => wall.id === view.wallId)?.name ?? "Wall"
                             : "Room"}
@@ -917,7 +917,7 @@ function ToolbarButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`shrink-0 border px-3 py-1.5 text-[9px] font-medium uppercase tracking-[0.2em] transition ${
+      className={`shrink-0 min-h-[44px] border px-3 py-2 text-[11px] font-medium uppercase tracking-[0.2em] transition ${
         disabled
           ? "cursor-not-allowed border-[var(--line)] bg-[var(--surface-soft)] text-[var(--muted-strong)] opacity-50"
           : isActive
@@ -932,7 +932,7 @@ function ToolbarButton({
 
 function SceneBadge({ value }: { value: string }) {
   return (
-    <span className="border border-[var(--line)] bg-[rgba(18,18,18,0.88)] px-3 py-1 text-[10px] text-[var(--foreground-soft)]">
+    <span className="border border-[var(--line)] bg-[rgba(18,18,18,0.88)] px-3 py-1 text-[11px] text-[var(--foreground-soft)]">
       {value}
     </span>
   );
