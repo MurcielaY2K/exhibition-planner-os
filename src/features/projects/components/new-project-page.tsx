@@ -129,6 +129,7 @@ function DimensionField({
     <Field label={`${label} (cm)`}>
       <input
         type="number"
+        inputMode="decimal"
         min={100}
         max={50000}
         step={0.1}

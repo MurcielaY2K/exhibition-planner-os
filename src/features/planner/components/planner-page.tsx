@@ -210,6 +210,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                           </span>
                           <input
                             type="number"
+                            inputMode="decimal"
                             step={1}
                             min={100}
                             max={50000}
@@ -505,6 +506,8 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       <input
                         value={selectedPlacement.installNotes}
                         placeholder="Install notes"
+                        autoCorrect="off"
+                        autoCapitalize="sentences"
                         onChange={(event) =>
                           updatePlacement(projectId, selectedPlacement.id, {
                             installNotes: event.target.value,
@@ -953,16 +956,20 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Title</span>
                         <input
                           value={selectedArtwork.title}
+                          autoCapitalize="words"
+                          autoCorrect="off"
                           onChange={(e) => updateArtwork(projectId, selectedArtwork.id, { title: e.target.value })}
-                          className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
+                          className="w-full min-h-[44px] border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
                         />
                       </label>
                       <label className="grid gap-1">
                         <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Artist</span>
                         <input
                           value={selectedArtwork.artist}
+                          autoCapitalize="words"
+                          autoCorrect="off"
                           onChange={(e) => updateArtwork(projectId, selectedArtwork.id, { artist: e.target.value })}
-                          className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
+                          className="w-full min-h-[44px] border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
                         />
                       </label>
                       <div className="grid grid-cols-2 gap-2">
@@ -1248,6 +1255,7 @@ function CompactInput({
       </span>
       <input
         type="number"
+        inputMode="decimal"
         step={step}
         value={Number.isFinite(value) ? value : 0}
         onChange={(event) => onChange(Number(event.target.value) || 0)}

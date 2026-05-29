@@ -1097,6 +1097,7 @@ function InlineNumberField({
         step={0.1}
         value={roundToTenth(value)}
         onChange={(event) => onChange(Number(event.target.value) || 0)}
+        inputMode="decimal"
         className="w-full min-h-[44px] border border-[var(--line)] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[var(--foreground)] outline-none transition focus:border-[var(--accent-strong)]"
       />
     </label>
