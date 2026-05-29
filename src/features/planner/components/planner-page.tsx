@@ -147,7 +147,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
   return (
     <main className="min-h-screen bg-[#090909] text-[#d0d0d0]">
       <div className="flex min-h-screen flex-col">
-        <header className="border-b border-white/8 bg-[#0f0f0f] px-3 py-1.5">
+        <header className="safe-top safe-x border-b border-white/8 bg-[#0f0f0f] px-3 py-1.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="pr-3 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#f3f1e8]">
@@ -727,7 +727,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
 
           <div className="order-1 flex min-h-[60svh] min-w-0 flex-col bg-[#070707] xl:order-none">
             {/* Mobile-only wall selector — desktop uses sidebar wall list */}
-            <div className="flex items-center gap-2 overflow-x-auto border-b border-white/8 bg-[#0e0e0e] px-3 py-2 scrollbar-subtle xl:hidden">
+            <div className="safe-x flex items-center gap-2 overflow-x-auto border-b border-white/8 bg-[#0e0e0e] px-3 py-2 scrollbar-subtle xl:hidden">
               {bundle.walls.map((wall) => (
                 <button
                   key={wall.id}
@@ -852,7 +852,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                 </div>
               ) }
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
+              <div className="safe-bottom pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-4">
                 <div className="pointer-events-auto flex items-center gap-1 border border-white/10 bg-[#0e0e0e]/96 px-2.5 py-2 shadow-[0_12px_28px_rgba(0,0,0,0.42)]">
                   <QuickActionButton
                     label="2D"
@@ -943,24 +943,52 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         label="C"
                         value={formatCompactCm(getPlacementCenterlineMm(selectedPlacement))}
                       />
-                      <CompactStatRow
-                        label="W"
-                        value={formatCompactCm(selectedPlacement.widthMm)}
-                      />
-                      <CompactStatRow
-                        label="H"
-                        value={formatCompactCm(selectedPlacement.heightMm)}
-                      />
-                      <CompactStatRow
-                        label="Mount"
-                        value={MOUNT_TYPE_OPTIONS.find(
-                          (option) => option.value === selectedPlacement.mountType,
-                        )?.label ?? selectedPlacement.mountType}
-                      />
-                      <CompactStatRow
-                        label="Lock"
-                        value={selectedPlacement.isLocked ? "Locked" : "Free"}
-                      />
+                    </div>
+
+                    <div className="space-y-2 border-t border-white/8 pt-3">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#7a7a7a]">
+                        Artwork
+                      </p>
+                      <label className="grid gap-1">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Title</span>
+                        <input
+                          value={selectedArtwork.title}
+                          onChange={(e) => updateArtwork(projectId, selectedArtwork.id, { title: e.target.value })}
+                          className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Artist</span>
+                        <input
+                          value={selectedArtwork.artist}
+                          onChange={(e) => updateArtwork(projectId, selectedArtwork.id, { artist: e.target.value })}
+                          className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
+                        />
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <CompactInput
+                          label="W (cm)"
+                          value={Math.round(selectedArtwork.widthMm / 10)}
+                          onChange={(v) => updateArtwork(projectId, selectedArtwork.id, { widthMm: v * 10 })}
+                        />
+                        <CompactInput
+                          label="H (cm)"
+                          value={Math.round(selectedArtwork.heightMm / 10)}
+                          onChange={(v) => updateArtwork(projectId, selectedArtwork.id, { heightMm: v * 10 })}
+                        />
+                      </div>
+                      <label className="grid gap-1">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Mount</span>
+                        <select
+                          className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
+                          value={selectedPlacement.mountType}
+                          onChange={(e) => updatePlacement(projectId, selectedPlacement.id, { mountType: e.target.value as MountType })}
+                        >
+                          {MOUNT_TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
 
                     {ui.selectedPlacementIds.length >= 2 ? (
@@ -1140,7 +1168,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
           ) : null}
         </section>
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 bg-[#0f0f0f] px-3 py-2 text-[12px] uppercase tracking-[0.18em] text-[#6e6e6e]">
+        <footer className="safe-x safe-bottom flex flex-wrap items-center justify-between gap-3 border-t border-white/8 bg-[#0f0f0f] px-3 py-2 text-[12px] uppercase tracking-[0.18em] text-[#6e6e6e]">
           <div className="flex flex-wrap items-center gap-2">
             <FooterPill label="Room" value={room.name} />
             <FooterPill label="Placed" value={bundle.placements.length.toString()} />

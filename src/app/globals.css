@@ -83,3 +83,17 @@ img {
   border-radius: 999px;
   background: rgba(135, 151, 170, 0.28);
 }
+
+/* Safe-area utility for devices with notches / dynamic island */
+.safe-bottom {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.safe-top {
+  padding-top: max(0px, env(safe-area-inset-top));
+}
+
+.safe-x {
+  padding-left: max(0px, env(safe-area-inset-left));
+  padding-right: max(0px, env(safe-area-inset-right));
+}

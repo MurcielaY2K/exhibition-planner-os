@@ -6,12 +6,19 @@ export const metadata: Metadata = {
   title: "Exhibition Planner OS",
   description:
     "Browser-based exhibition planning software for galleries, museums, and exhibition design teams.",
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#090909",
 };
 
 export default function RootLayout({
