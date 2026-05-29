@@ -130,6 +130,8 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
               <Field label="Title">
                 <input
                   className={inputClassName}
+                  autoCapitalize="words"
+                  autoCorrect="off"
                   value={selectedArtwork.title}
                   onChange={(event) =>
                     updateArtwork(projectId, selectedArtwork.id, {
@@ -141,6 +143,8 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
               <Field label="Artist">
                 <input
                   className={inputClassName}
+                  autoCapitalize="words"
+                  autoCorrect="off"
                   value={selectedArtwork.artist}
                   onChange={(event) =>
                     updateArtwork(projectId, selectedArtwork.id, {
@@ -233,6 +237,7 @@ function DimensionField({
     <Field label={`${label} (cm)`}>
       <input
         type="number"
+        inputMode="decimal"
         min={0}
         step={0.1}
         className={inputClassName}
