@@ -205,7 +205,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       const key = axis === "W" ? "widthMm" : axis === "D" ? "depthMm" : "heightMm";
                       return (
                         <label key={axis} className="grid gap-1">
-                          <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">
+                          <span className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">
                             {axis}
                           </span>
                           <input
@@ -226,7 +226,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                       );
                     })}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-[#4a4a4a]">cm</p>
+                  <p className="mt-1.5 text-[11px] text-[#4a4a4a]">cm</p>
                 </div>
 
                 <div className="mb-4">
@@ -953,7 +953,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         Artwork
                       </p>
                       <label className="grid gap-1">
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Title</span>
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">Title</span>
                         <input
                           value={selectedArtwork.title}
                           autoCapitalize="words"
@@ -963,7 +963,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         />
                       </label>
                       <label className="grid gap-1">
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Artist</span>
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">Artist</span>
                         <input
                           value={selectedArtwork.artist}
                           autoCapitalize="words"
@@ -985,7 +985,7 @@ export function PlannerPage({ projectId }: { projectId: string }) {
                         />
                       </div>
                       <label className="grid gap-1">
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5a5a5a]">Mount</span>
+                        <span className="text-[11px] uppercase tracking-[0.2em] text-[#5a5a5a]">Mount</span>
                         <select
                           className="w-full border border-white/8 bg-[#131313] px-2 py-1.5 text-[12px] text-[#e8e8e8] outline-none transition focus:border-white/16"
                           value={selectedPlacement.mountType}
