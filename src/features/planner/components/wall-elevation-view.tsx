@@ -260,7 +260,7 @@ export function WallElevationView({
     <div className="relative overflow-hidden border border-[var(--line)] bg-[#0c0c0c] shadow-[0_18px_48px_rgba(0,0,0,0.34)]">
       <div className="flex items-center justify-between border-b border-[var(--line)] bg-[#101010] px-5 py-3 sm:px-6">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--muted-strong)]">
             {wall.name}
           </p>
         </div>
@@ -933,7 +933,7 @@ export function WallElevationView({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-strong)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-strong)]">
                     {selectedPlacementLabel ?? "A1"}
                   </p>
                   <p className="truncate text-[13px] font-semibold text-[var(--foreground)]">
@@ -947,7 +947,7 @@ export function WallElevationView({
                       isLocked: !selectedPlacement.isLocked,
                     })
                   }
-                  className={`border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] transition ${
+                  className={`border px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] transition ${
                     selectedPlacement.isLocked
                       ? "border-[rgba(235,255,0,0.4)] bg-[rgba(235,255,0,0.08)] text-[var(--foreground)]"
                       : "border-[var(--line)] text-[var(--foreground-soft)] hover:bg-[rgba(255,255,255,0.04)]"
@@ -980,7 +980,7 @@ export function WallElevationView({
 
               <div className="mt-1.5 grid grid-cols-[minmax(0,1fr)_72px] gap-1.5">
                 <label className="grid gap-1">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
                     Mount
                   </span>
                   <select
@@ -1000,11 +1000,11 @@ export function WallElevationView({
                   </select>
                 </label>
                 <div className="grid gap-1">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
                     Status
                   </span>
                   <div
-                    className={`grid h-[36px] place-items-center border text-[12px] font-medium uppercase tracking-[0.08em] ${
+                    className={`grid min-h-[44px] place-items-center border text-[12px] font-medium uppercase tracking-[0.08em] ${
                       selectedPlacementValidation?.isValid
                         ? "border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.03)] text-[var(--foreground)]"
                         : "border-[rgba(143,57,49,0.38)] bg-[rgba(143,57,49,0.12)] text-[#efc0bc]"
@@ -1089,7 +1089,7 @@ function InlineNumberField({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
         {label}
       </span>
       <input
@@ -1097,7 +1097,7 @@ function InlineNumberField({
         step={0.1}
         value={roundToTenth(value)}
         onChange={(event) => onChange(Number(event.target.value) || 0)}
-        className="w-full border border-[var(--line)] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[var(--foreground)] outline-none transition focus:border-[var(--accent-strong)]"
+        className="w-full min-h-[44px] border border-[var(--line)] bg-[#141414] px-2.5 py-1.5 text-[13px] text-[var(--foreground)] outline-none transition focus:border-[var(--accent-strong)]"
       />
     </label>
   );
@@ -1114,10 +1114,10 @@ function InlineReadout({
 }) {
   return (
     <div className={`grid gap-1 ${className}`}>
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted-strong)]">
         {label}
       </span>
-      <div className="grid h-[36px] place-items-center border border-[var(--line)] bg-[#141414] text-[13px] font-medium text-[var(--foreground)]">
+      <div className="grid min-h-[44px] place-items-center border border-[var(--line)] bg-[#141414] text-[13px] font-medium text-[var(--foreground)]">
         {roundToTenth(value)}
       </div>
     </div>
