@@ -93,7 +93,7 @@ export function ProjectOverviewPage({ projectId }: { projectId: string }) {
                           selectWall(projectId, wall.id);
                           router.push(`/projects/${projectId}/planner`);
                         }}
-                        className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
+                        className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
                       >
                         Review wall
                       </button>
@@ -140,7 +140,7 @@ function ActionLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
+      className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:bg-[var(--surface-muted)]"
     >
       {label}
     </Link>

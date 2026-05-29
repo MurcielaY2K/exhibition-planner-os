@@ -67,7 +67,7 @@ export function ArtworkLibraryPage({ projectId }: { projectId: string }) {
             </div>
             <button
               type="button"
-              className="rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
+              className="inline-flex min-h-[44px] items-center rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[var(--accent-strong)]"
               onClick={() => addArtwork(projectId)}
             >
               Add artwork

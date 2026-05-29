@@ -105,7 +105,7 @@ function RouteLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[var(--surface-muted)]"
+      className="inline-flex min-h-[44px] items-center rounded-full border border-black/10 px-4 py-2 text-sm font-medium text-[var(--muted-strong)] transition hover:bg-[var(--surface-muted)]"
     >
       {label}
     </Link>

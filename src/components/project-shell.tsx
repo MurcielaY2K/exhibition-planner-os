@@ -20,10 +20,20 @@ export function ProjectShell({
   const baseHref = `/projects/${project.id}`;
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      <div className="mx-auto max-w-[1720px] px-3 py-3 sm:px-5 sm:py-5 xl:px-6">
+    <main className="safe-top min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+      {/* Mobile bottom navigation bar — hidden on xl where sidebar is visible */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--line)] bg-[rgba(7,7,7,0.92)] backdrop-blur-sm safe-bottom xl:hidden">
+        <div className="grid grid-cols-4">
+          <MobileNavButton href={baseHref} isActive={activePath === "overview"} label="Overview" />
+          <MobileNavButton href={`${baseHref}/planner`} isActive={activePath === "planner"} label="Planner" />
+          <MobileNavButton href={`${baseHref}/artworks`} isActive={activePath === "artworks"} label="Artworks" />
+          <MobileNavButton href={`${baseHref}/export`} isActive={activePath === "export"} label="Exports" />
+        </div>
+      </nav>
+
+      <div className="mx-auto max-w-[1720px] px-3 py-3 pb-[80px] sm:px-5 sm:py-5 xl:px-6 xl:pb-5">
         <div className="grid gap-4 xl:grid-cols-[272px_minmax(0,1fr)]">
-          <aside className="xl:sticky xl:top-5 xl:h-[calc(100svh-40px)]">
+          <aside className="hidden xl:block xl:sticky xl:top-5 xl:h-[calc(100svh-40px)]">
             <Card className="flex h-full flex-col overflow-hidden p-4 sm:p-5">
               <div className="flex items-center gap-3 rounded-[18px] border border-[var(--line)] bg-[rgba(18,27,37,0.88)] px-4 py-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--line)] bg-[rgba(77,142,163,0.14)] text-sm font-semibold text-[var(--accent)]">
@@ -160,10 +170,33 @@ function NavButton({
   return (
     <Link
       href={href}
-      className={`flex items-center rounded-[16px] px-4 py-3 text-sm font-medium transition ${
+      className={`flex min-h-[44px] items-center rounded-[16px] px-4 py-3 text-sm font-medium transition ${
         isActive
           ? "border border-[rgba(95,169,193,0.28)] bg-[rgba(77,142,163,0.24)] text-[var(--foreground)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
           : "border border-transparent text-[var(--foreground-soft)] hover:border-[var(--line)] hover:bg-[rgba(18,27,37,0.72)]"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function MobileNavButton({
+  href,
+  label,
+  isActive,
+}: {
+  href: string;
+  label: string;
+  isActive: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium transition ${
+        isActive
+          ? "text-[var(--accent)]"
+          : "text-[var(--muted-strong)]"
       }`}
     >
       {label}

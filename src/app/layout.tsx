@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Exhibition Planner OS",
   description:
     "Browser-based exhibition planning software for galleries, museums, and exhibition design teams.",
+  manifest: "/manifest.json",
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",

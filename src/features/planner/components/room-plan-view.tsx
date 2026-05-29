@@ -99,7 +99,17 @@ export function RoomPlanView({
           const line = getWallLine(room, wall);
 
           return (
-            <g key={wall.id} onClick={() => onSelectWall(wall.id)}>
+            <g key={wall.id} onClick={() => onSelectWall(wall.id)} style={{ cursor: "pointer" }}>
+              {/* Wide invisible hit area for reliable touch targeting */}
+              <line
+                x1={line.x1}
+                y1={line.y1}
+                x2={line.x2}
+                y2={line.y2}
+                stroke="transparent"
+                strokeWidth={600}
+                strokeLinecap="round"
+              />
               <line
                 x1={line.x1}
                 y1={line.y1}
@@ -108,7 +118,7 @@ export function RoomPlanView({
                 stroke={isSelected ? "#2b6152" : "rgba(37,33,28,0.18)"}
                 strokeWidth={isSelected ? 180 : 130}
                 strokeLinecap="round"
-                style={{ cursor: "pointer" }}
+                pointerEvents="none"
               />
               <text
                 x={line.labelX}
@@ -116,6 +126,7 @@ export function RoomPlanView({
                 fontSize={220}
                 textAnchor="middle"
                 fill="rgba(48,43,37,0.72)"
+                pointerEvents="none"
               >
                 {wall.name}
               </text>
@@ -134,19 +145,28 @@ export function RoomPlanView({
           const isSelected = opening.id === selectedOpeningId;
 
           return (
-            <rect
-              key={opening.id}
-              x={footprint.x}
-              y={footprint.y}
-              width={footprint.width}
-              height={footprint.height}
-              rx={40}
-              fill={opening.type === "door" ? "rgba(250,248,243,0.98)" : "rgba(199,220,235,0.78)"}
-              stroke={isSelected ? "#2b6152" : opening.type === "door" ? "rgba(78,70,61,0.72)" : "rgba(28,59,84,0.72)"}
-              strokeWidth={isSelected ? 90 : 70}
-              style={{ cursor: "pointer" }}
-              onClick={() => onSelectOpening(opening.id)}
-            />
+            <g key={opening.id} onClick={() => onSelectOpening(opening.id)} style={{ cursor: "pointer" }}>
+              {/* Expanded hit area for reliable touch targeting */}
+              <rect
+                x={footprint.x - 150}
+                y={footprint.y - 150}
+                width={footprint.width + 300}
+                height={footprint.height + 300}
+                rx={80}
+                fill="transparent"
+              />
+              <rect
+                x={footprint.x}
+                y={footprint.y}
+                width={footprint.width}
+                height={footprint.height}
+                rx={40}
+                fill={opening.type === "door" ? "rgba(250,248,243,0.98)" : "rgba(199,220,235,0.78)"}
+                stroke={isSelected ? "#2b6152" : opening.type === "door" ? "rgba(78,70,61,0.72)" : "rgba(28,59,84,0.72)"}
+                strokeWidth={isSelected ? 90 : 70}
+                pointerEvents="none"
+              />
+            </g>
           );
         })}
 

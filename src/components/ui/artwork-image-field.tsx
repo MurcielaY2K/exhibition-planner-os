@@ -26,7 +26,7 @@ export function ArtworkImageField({
       <div className="flex flex-wrap gap-2">
         <label
           htmlFor={inputId}
-          className="inline-flex cursor-pointer items-center justify-center rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#041017] transition hover:bg-[var(--accent-strong)]"
+          className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-full bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[#041017] transition hover:bg-[var(--accent-strong)]"
         >
           Upload visual
         </label>
@@ -49,7 +49,7 @@ export function ArtworkImageField({
         {imageUrl ? (
           <button
             type="button"
-            className="rounded-full border border-[var(--line-strong)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:border-[var(--line-strong)] hover:bg-[var(--surface-muted)]"
+            className="inline-flex min-h-[44px] items-center rounded-full border border-[var(--line-strong)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-medium text-[var(--foreground-soft)] transition hover:border-[var(--line-strong)] hover:bg-[var(--surface-muted)]"
             onClick={onClear}
           >
             Remove image

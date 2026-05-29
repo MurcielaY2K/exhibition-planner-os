@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#070707"/>
+  <!-- Room floor plan outline -->
+  <rect x="80" y="100" width="352" height="280" fill="none" stroke="#b6c62a" stroke-width="28" stroke-linejoin="round"/>
+  <!-- Wall indicators -->
+  <line x1="80" y1="100" x2="432" y2="100" stroke="#b6c62a" stroke-width="28"/>
+  <!-- Artwork on north wall -->
+  <rect x="170" y="85" width="80" height="48" rx="6" fill="#b6c62a" opacity="0.9"/>
+  <!-- Artwork on west wall -->
+  <rect x="65" y="190" width="48" height="64" rx="6" fill="#b6c62a" opacity="0.7"/>
+  <!-- Human scale reference -->
+  <ellipse cx="310" cy="290" rx="30" ry="44" fill="none" stroke="rgba(182,198,42,0.4)" stroke-width="14"/>
+  <circle cx="310" cy="232" r="18" fill="none" stroke="rgba(182,198,42,0.4)" stroke-width="14"/>
+</svg>

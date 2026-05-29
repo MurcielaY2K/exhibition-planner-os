@@ -14,7 +14,7 @@ export function AppFrame({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <main className="safe-top min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       <div className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 sm:py-5 xl:px-8">
         <div className="rounded-[32px] border border-[var(--line)] bg-[linear-gradient(180deg,rgba(20,29,38,0.96)_0%,rgba(11,16,21,0.94)_100%)] px-5 py-5 shadow-[0_28px_90px_rgba(0,0,0,0.34)] sm:px-8 sm:py-6">
           <div className="flex flex-col gap-5">
