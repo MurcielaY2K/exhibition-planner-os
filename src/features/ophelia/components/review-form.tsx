@@ -191,7 +191,7 @@ export function ReviewForm({
         >
           {lang === "th" ? "เลือกความรู้สึก" : "What resonated?"}
         </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {ALL_AXES.map((key) => {
             const label = AXIS_LABELS[key];
             const isSelected = selectedAxes.has(key);
@@ -200,28 +200,19 @@ export function ReviewForm({
                 key={key}
                 type="button"
                 onClick={() => toggleAxis(key)}
-                className="flex flex-col items-start gap-1 rounded-xl px-3.5 py-3 text-left transition-all duration-150 active:scale-[0.97]"
+                className="flex items-center gap-3 rounded-xl px-4 text-left transition-all duration-150 active:scale-[0.96]"
                 style={{
-                  background: isSelected
-                    ? "rgba(182,198,42,0.10)"
-                    : "var(--surface-soft)",
-                  border: isSelected
-                    ? "1.5px solid var(--accent)"
-                    : "1.5px solid var(--line)",
-                  color: isSelected
-                    ? "var(--accent)"
-                    : "var(--foreground-soft)",
+                  minHeight: "52px",
+                  background: isSelected ? "rgba(182,198,42,0.10)" : "var(--surface-soft)",
+                  border: isSelected ? "1.5px solid var(--accent)" : "1.5px solid var(--line)",
+                  color: isSelected ? "var(--accent)" : "var(--foreground-soft)",
                 }}
                 aria-pressed={isSelected}
               >
                 <span
-                  className="text-base leading-none"
+                  className="text-lg leading-none shrink-0"
                   aria-hidden="true"
-                  style={{
-                    color: isSelected
-                      ? "var(--accent-strong)"
-                      : "var(--muted-strong)",
-                  }}
+                  style={{ color: isSelected ? "var(--accent-strong)" : "var(--muted-strong)" }}
                 >
                   {label.emoji}
                 </span>
@@ -311,26 +302,23 @@ export function ReviewForm({
         <button
           type="submit"
           disabled={selectedAxes.size === 0 || isSubmitting}
-          className="flex-1 rounded-full py-2.5 text-sm font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex-1 rounded-full text-sm font-bold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
           style={{
-            background:
-              selectedAxes.size > 0 ? "var(--accent)" : "var(--surface-soft)",
+            height: "48px",
+            background: selectedAxes.size > 0 ? "var(--accent)" : "var(--surface-soft)",
             color: selectedAxes.size > 0 ? "#070707" : "var(--muted-strong)",
           }}
         >
           {isSubmitting
-            ? lang === "th"
-              ? "กำลังบันทึก…"
-              : "Saving…"
-            : lang === "th"
-              ? "ส่งความเห็น"
-              : "Submit take"}
+            ? lang === "th" ? "กำลังบันทึก…" : "Saving…"
+            : lang === "th" ? "ส่งความเห็น" : "Submit take"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full px-4 py-2.5 text-sm font-medium transition-colors duration-150 hover:opacity-70"
+          className="rounded-full px-5 text-sm font-medium transition-colors duration-150 active:opacity-60"
           style={{
+            height: "48px",
             background: "var(--surface-soft)",
             color: "var(--foreground-soft)",
             border: "1px solid var(--line)",

@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: "Exhibition Planner OS",
   description:
     "Browser-based exhibition planning software for galleries, museums, and exhibition design teams.",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  },
 };
 
 export default function RootLayout({

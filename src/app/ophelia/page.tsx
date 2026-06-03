@@ -36,7 +36,7 @@ export default function OpheliaFeedPage() {
     <div>
       {/* ─── HERO ─── */}
       <section
-        className="relative overflow-hidden px-5 pb-16 pt-14 sm:px-8 sm:pt-20 md:px-12 md:pt-24"
+        className="relative overflow-hidden px-5 pb-8 pt-8 sm:px-8 sm:pb-16 sm:pt-20 md:px-12 md:pt-24"
         style={{
           borderBottom: "1px solid var(--line)",
           background:
@@ -110,7 +110,7 @@ export default function OpheliaFeedPage() {
           </h1>
 
           {/* Bilingual sub-deck */}
-          <div className="mt-8 max-w-2xl">
+          <div className="mt-4 max-w-2xl sm:mt-8">
             {lang === "both" ? (
               <div className="flex flex-col gap-2">
                 <p
@@ -137,7 +137,7 @@ export default function OpheliaFeedPage() {
           </div>
 
           {/* Stats strip */}
-          <div className="mt-10 flex flex-wrap gap-6">
+          <div className="mt-6 flex flex-wrap gap-6 sm:mt-10">
             {[
               {
                 value: events.length,
