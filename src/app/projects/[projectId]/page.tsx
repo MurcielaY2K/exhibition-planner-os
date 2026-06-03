@@ -2,7 +2,9 @@ import { ProjectOverviewPage } from "@/features/projects/components/project-over
 
 export default async function ProjectOverviewRoute({
   params,
-}: PageProps<"/projects/[projectId]">) {
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
   const { projectId } = await params;
 
   return <ProjectOverviewPage projectId={projectId} />;
