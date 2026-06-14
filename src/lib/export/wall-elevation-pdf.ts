@@ -273,20 +273,27 @@ class PdfWriter {
     objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
     objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
 
+    const encoder = new TextEncoder();
+    const byteLength = (value: string) => encoder.encode(value).length;
+
     this.pages.forEach((commands) => {
       const content = commands.join("\n");
-      objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+      // /Length and xref offsets are BYTE counts; the file is emitted as UTF-8.
+      // Using string .length (UTF-16 code units) would desync every offset for
+      // any multi-byte character. Measure encoded bytes instead.
+      objects.push(`<< /Length ${byteLength(content)} >>\nstream\n${content}\nendstream`);
     });
 
-    const parts = ["%PDF-1.4\n"];
+    const header = "%PDF-1.4\n";
+    const parts = [header];
     const offsets: number[] = [0];
-    let currentOffset = parts[0].length;
+    let currentOffset = byteLength(header);
 
     objects.forEach((object, index) => {
       offsets.push(currentOffset);
       const serialized = `${index + 1} 0 obj\n${object}\nendobj\n`;
       parts.push(serialized);
-      currentOffset += serialized.length;
+      currentOffset += byteLength(serialized);
     });
 
     const xrefStart = currentOffset;
@@ -442,12 +449,17 @@ function createWallPageData(input: PdfExportInput): WallPageData {
     HEADER_HEIGHT_PT -
     DRAWING_OUTER_TOP_PT -
     DRAWING_OUTER_BOTTOM_PT;
+  // Guard against degenerate walls: a zero length/height would make the scale
+  // Infinity/NaN, which then serializes into the PDF content stream as the
+  // literal strings "Infinity"/"NaN" and corrupts the whole page.
+  const safeLengthMm = input.wall.lengthMm > 0 ? input.wall.lengthMm : 1;
+  const safeHeightMm = input.wall.heightMm > 0 ? input.wall.heightMm : 1;
   const scalePtPerMm = Math.min(
-    drawingAvailableWidthPt / input.wall.lengthMm,
-    drawingAvailableHeightPt / input.wall.heightMm,
+    drawingAvailableWidthPt / safeLengthMm,
+    drawingAvailableHeightPt / safeHeightMm,
   );
-  const drawingWidthPt = input.wall.lengthMm * scalePtPerMm;
-  const drawingHeightPt = input.wall.heightMm * scalePtPerMm;
+  const drawingWidthPt = safeLengthMm * scalePtPerMm;
+  const drawingHeightPt = safeHeightMm * scalePtPerMm;
   const drawingLeftPt =
     PAGE_MARGIN_PT +
     DRAWING_OUTER_LEFT_PT +
@@ -976,25 +988,29 @@ function drawAnnotationTables(
     });
     cursorY -= 16;
     cursorY = drawInstallerTable(writer, artworkRows, tableLeftPt, cursorY, tableWidthPt, bottomGuard);
-    writer.addText(
-      `Key checks: edge and opening clearance, drill spacing, and mount suitability. Error thresholds: edges < ${formatCentimetersCompact(DRILL_EDGE_CLEARANCE_MM)} cm, openings < ${formatCentimetersCompact(DRILL_OPENING_CLEARANCE_MM)} cm, drill spacing < ${formatCentimetersCompact(DRILL_POINT_CLEARANCE_MM)} cm, drill height < ${formatCentimetersCompact(DRILL_MIN_HEIGHT_MM)} cm, top clearance < ${formatCentimetersCompact(DRILL_TOP_CLEARANCE_MM)} cm.`,
-      tableLeftPt,
-      cursorY - 12,
-      {
-        size: 7.4,
-        color: TECH_MID,
-      },
-    );
-    cursorY -= 28;
+    // Only emit the threshold note if it fits above the bottom margin.
+    if (cursorY - 12 > bottomGuard) {
+      writer.addText(
+        `Key checks: edge and opening clearance, drill spacing, and mount suitability. Error thresholds: edges < ${formatCentimetersCompact(DRILL_EDGE_CLEARANCE_MM)} cm, openings < ${formatCentimetersCompact(DRILL_OPENING_CLEARANCE_MM)} cm, drill spacing < ${formatCentimetersCompact(DRILL_POINT_CLEARANCE_MM)} cm, drill height < ${formatCentimetersCompact(DRILL_MIN_HEIGHT_MM)} cm, top clearance < ${formatCentimetersCompact(DRILL_TOP_CLEARANCE_MM)} cm.`,
+        tableLeftPt,
+        cursorY - 12,
+        {
+          size: 7.4,
+          color: TECH_MID,
+        },
+      );
+      cursorY -= 28;
+    }
     const riskRows = artworkRows.filter((row) => row.drillWarnings.length > 0);
-    if (riskRows.length > 0) {
+    // Reserve room for the heading plus at least one two-line alert (~37 pt).
+    if (riskRows.length > 0 && cursorY - 37 > bottomGuard) {
       writer.addText("Installation Alerts", tableLeftPt, cursorY, {
         font: "F2",
         size: 12,
         color: TECH_BLACK,
       });
       cursorY -= 14;
-      riskRows
+      const alertEntries = riskRows
         .flatMap((row) =>
           row.drillWarnings.map((warning) => ({
             code: row.code,
@@ -1003,40 +1019,57 @@ function drawAnnotationTables(
             action: truncateText(warning.fix?.label ?? warning.suggestion ?? "Review placement", 42),
           })),
         )
-        .slice(0, 6)
-        .forEach((entry) => {
-          writer.addText(entry.code, tableLeftPt, cursorY, {
-            font: "F2",
-            size: 7.6,
-            color: entry.severity === "error" ? TECH_WARNING : TECH_CAUTION,
-          });
-          writer.addText(
-            `${entry.severity === "error" ? "Error" : "Warning"}: ${entry.issue}`,
-            tableLeftPt + 26,
-            cursorY,
-            {
-              size: 7.4,
-              color: TECH_DARK,
-            },
-          );
-          cursorY -= 10;
-          writer.addText(`Action: ${entry.action}`, tableLeftPt + 26, cursorY, {
-            size: 7.2,
-            color: TECH_MID,
-          });
-          cursorY -= 13;
+        .slice(0, 6);
+      let overflowAlerts = 0;
+      for (let alertIndex = 0; alertIndex < alertEntries.length; alertIndex += 1) {
+        const entry = alertEntries[alertIndex];
+        // Each entry needs two lines (~23 pt). Stop before crossing the guard.
+        if (cursorY - 23 < bottomGuard) {
+          overflowAlerts = alertEntries.length - alertIndex;
+          break;
+        }
+        writer.addText(entry.code, tableLeftPt, cursorY, {
+          font: "F2",
+          size: 7.6,
+          color: entry.severity === "error" ? TECH_WARNING : TECH_CAUTION,
         });
+        writer.addText(
+          `${entry.severity === "error" ? "Error" : "Warning"}: ${entry.issue}`,
+          tableLeftPt + 26,
+          cursorY,
+          {
+            size: 7.4,
+            color: TECH_DARK,
+          },
+        );
+        cursorY -= 10;
+        writer.addText(`Action: ${entry.action}`, tableLeftPt + 26, cursorY, {
+          size: 7.2,
+          color: TECH_MID,
+        });
+        cursorY -= 13;
+      }
+      if (overflowAlerts > 0 && cursorY - 10 > bottomGuard) {
+        writer.addText(
+          `+ ${overflowAlerts} more alert${overflowAlerts === 1 ? "" : "s"} — download full exhibition export`,
+          tableLeftPt,
+          cursorY,
+          { size: 7.2, color: TECH_MID },
+        );
+        cursorY -= 10;
+      }
       cursorY -= 8;
     }
   }
-  cursorY -= 18;
-  writer.addText("Openings", tableLeftPt, cursorY, {
-    font: "F2",
-    size: 13,
-    color: TECH_BLACK,
-  });
-  cursorY -= 16;
-  if (cursorY > bottomGuard + 44) {
+  // Reserve room for the heading (18 + 16) plus a header row before committing.
+  if (cursorY - 34 > bottomGuard + 44) {
+    cursorY -= 18;
+    writer.addText("Openings", tableLeftPt, cursorY, {
+      font: "F2",
+      size: 13,
+      color: TECH_BLACK,
+    });
+    cursorY -= 16;
     drawOpeningTable(writer, openingRows, tableLeftPt, cursorY, tableWidthPt, bottomGuard);
   }
 }

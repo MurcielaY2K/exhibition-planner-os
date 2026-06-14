@@ -14,6 +14,7 @@ import {
 } from "@/lib/domain/placement";
 import { createWallsForRoom, syncWallsWithRoom } from "@/lib/domain/rooms";
 import { seedProject, seedSelection } from "@/lib/domain/seed";
+import { getExhibitionStorage } from "@/lib/state/idb-storage";
 import type {
   AlignmentMode,
   Artwork,
@@ -80,7 +81,15 @@ interface ExhibitionState {
 }
 
 function createId(prefix: string) {
-  return `${prefix}-${crypto.randomUUID()}`;
+  // crypto.randomUUID is only defined in secure contexts (HTTPS/localhost). On
+  // a plain-HTTP LAN/venue host it is undefined, which would otherwise throw and
+  // break project/artwork/opening creation. Fall back to a sufficiently-unique
+  // id when it is unavailable.
+  const uuid =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${uuid}`;
 }
 
 function touchProject(project: Project): Project {
@@ -141,7 +150,9 @@ export function getProjectBundle(
   return findProject(projects, projectId);
 }
 
-function ensurePlannerSelection(selection?: PlannerSelection): PlannerSelection {
+function ensurePlannerSelection(
+  selection?: Partial<PlannerSelection>,
+): PlannerSelection {
   return {
     selectedRoomId: selection?.selectedRoomId ?? "",
     selectedWallId: selection?.selectedWallId ?? "",
@@ -200,16 +211,11 @@ export const useExhibitionStore = create<ExhibitionState>()(
       projects: [...state.projects, bundle],
       ui: {
         ...state.ui,
-        [projectId]: {
+        [projectId]: ensurePlannerSelection({
           selectedRoomId: room.id,
           selectedWallId: room.wallIds[0],
-          selectedLightId: undefined,
-          selectedPlacementIds: [],
           activeView: "elevation",
-          savedCameraViews: [],
-          wallColor: "#f4f0e8",
-          ambientLight: 82,
-        },
+        }),
       },
     }));
 
@@ -313,7 +319,7 @@ export const useExhibitionStore = create<ExhibitionState>()(
       ui: {
         ...state.ui,
         [projectId]: {
-          ...state.ui[projectId],
+          ...ensurePlannerSelection(state.ui[projectId]),
           selectedOpeningId: undefined,
           selectedLightId: undefined,
           selectedArtworkId: artworkId,
@@ -1067,7 +1073,28 @@ export const useExhibitionStore = create<ExhibitionState>()(
 }),
     {
       name: "exhibition-planner-store",
-      storage: createJSONStorage(() => localStorage),
+      version: 1,
+      storage: createJSONStorage(() => getExhibitionStorage()),
+      // Persisted bundles/selections evolve over time (fields like
+      // savedCameraViews, ambientLight, primaryPlacementId were added). Older
+      // payloads rehydrate without running through the action-level defaulting
+      // helpers, so normalize every selection here to backfill missing fields.
+      migrate: (persisted) => {
+        const state = persisted as Partial<ExhibitionState> | undefined;
+        if (!state) {
+          return persisted as ExhibitionState;
+        }
+        const ui = state.ui ?? {};
+        const normalizedUi: Record<string, PlannerSelection> = {};
+        for (const [projectId, selection] of Object.entries(ui)) {
+          normalizedUi[projectId] = ensurePlannerSelection(selection);
+        }
+        return {
+          ...state,
+          projects: state.projects ?? [],
+          ui: normalizedUi,
+        } as ExhibitionState;
+      },
     },
   ),
 );

@@ -802,6 +802,17 @@ function ArtworkFrontPlane({
 }) {
   const texture = useTexture(imageUrl);
 
+  // Artwork images are compressed data URLs that change on every upload. drei's
+  // loader caches each distinct URL and never frees it, so dispose the GPU
+  // texture (and clear the cache entry) when the URL changes or the plane
+  // unmounts to avoid accumulating texture memory across an editing session.
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+      useTexture.clear(imageUrl);
+    };
+  }, [texture, imageUrl]);
+
   return (
     <mesh position={[0, 0, depth / 2 + 0.003]}>
       <planeGeometry args={[width * 0.94, height * 0.94]} />

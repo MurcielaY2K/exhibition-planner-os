@@ -1364,8 +1364,8 @@ function MiniPlanView({
 }: {
   room: { widthMm: number; depthMm: number };
   walls: Array<{ id: string; index: 0 | 1 | 2 | 3; name: string }>;
-  openings: Array<{ wallId: string; xMm: number; widthMm: number }>;
-  placements: Array<{ wallId: string; xMm: number; widthMm: number }>;
+  openings: Array<{ id: string; wallId: string; xMm: number; widthMm: number }>;
+  placements: Array<{ id: string; wallId: string; xMm: number; widthMm: number }>;
   selectedWallId?: string;
   onSelectWall: (wallId: string) => void;
 }) {
@@ -1443,7 +1443,7 @@ function MiniPlanView({
             />
           );
         })}
-        {placements.map((placement, index) => {
+        {placements.map((placement) => {
           const x =
             placement.wallId === walls[0]?.id || placement.wallId === walls[2]?.id
               ? (placement.xMm / room.widthMm) * width
@@ -1467,7 +1467,7 @@ function MiniPlanView({
 
           return (
             <rect
-              key={`${placement.wallId}-${index}`}
+              key={placement.id}
               x={x}
               y={y}
               width={rectWidth}
@@ -1476,7 +1476,7 @@ function MiniPlanView({
             />
           );
         })}
-        {openings.map((opening, index) => {
+        {openings.map((opening) => {
           const x =
             opening.wallId === walls[0]?.id || opening.wallId === walls[2]?.id
               ? (opening.xMm / room.widthMm) * width
@@ -1500,7 +1500,7 @@ function MiniPlanView({
 
           return (
             <rect
-              key={`${opening.wallId}-${index}`}
+              key={opening.id}
               x={x}
               y={y}
               width={rectWidth}

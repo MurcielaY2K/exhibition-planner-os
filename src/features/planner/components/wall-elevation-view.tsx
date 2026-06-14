@@ -25,7 +25,6 @@ import {
 } from "@/lib/domain/scale-reference";
 import type {
   Artwork,
-  DrillPointWarning,
   MountType,
   Opening,
   Placement,
@@ -175,6 +174,10 @@ export function WallElevationView({
   function finishDrag() {
     if (!dragState) {
       return;
+    }
+
+    if (svgRef.current?.hasPointerCapture(dragState.pointerId)) {
+      svgRef.current.releasePointerCapture(dragState.pointerId);
     }
 
     if (dragState.isInvalid && dragState.lastValidPatches.length > 0) {
@@ -543,7 +546,10 @@ export function WallElevationView({
                   onSelectPlacement(placement.id, false);
                 }
 
-                event.currentTarget.setPointerCapture(event.pointerId);
+                // Capture on the <svg> that owns the move/up/cancel handlers
+                // (not the per-placement <g>), so the gesture survives any
+                // mid-drag reordering of placement nodes.
+                svgRef.current?.setPointerCapture(event.pointerId);
                 setDragState({
                   anchorPlacementId: placement.id,
                   pointerId: event.pointerId,
