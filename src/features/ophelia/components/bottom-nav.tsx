@@ -10,8 +10,9 @@ export function BottomNav() {
   const lang = session.lang;
   const userId = session.userId;
 
+  const isToday = pathname === "/ophelia/today";
   const isFeed = pathname === "/ophelia";
-  const isDiscover = pathname === "/ophelia" && false; // future route
+  const isDivided = pathname.startsWith("/ophelia/leaderboard");
   const isProfile =
     pathname.startsWith("/ophelia/profile") ||
     pathname === "/ophelia/onboarding";
@@ -19,6 +20,9 @@ export function BottomNav() {
   const profileHref = userId
     ? `/ophelia/profile/${userId}`
     : "/ophelia/onboarding";
+
+  const active = (on: boolean) =>
+    on ? "var(--accent-strong)" : "var(--muted-strong)";
 
   return (
     <nav
@@ -33,63 +37,36 @@ export function BottomNav() {
       aria-label="Main navigation"
     >
       <div className="flex h-16 items-stretch">
+        {/* Today */}
+        <Link
+          href="/ophelia/today"
+          className="flex flex-1 flex-col items-center justify-center gap-1 transition-opacity duration-100 active:opacity-60"
+          aria-label={lang === "th" ? "วันนี้" : "Today"}
+        >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke={active(isToday)} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="16" height="15" rx="2" />
+            <line x1="3" y1="9" x2="19" y2="9" />
+            <circle cx="11" cy="14" r="1.6" fill={active(isToday)} stroke="none" />
+          </svg>
+          <span className="text-[10px] font-semibold uppercase tracking-wider leading-none" style={{ color: active(isToday) }}>
+            {lang === "th" ? "วันนี้" : "Today"}
+          </span>
+        </Link>
+
         {/* Feed */}
         <Link
           href="/ophelia"
           className="flex flex-1 flex-col items-center justify-center gap-1 transition-opacity duration-100 active:opacity-60"
           aria-label={lang === "th" ? "ฟีด" : "Feed"}
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            fill="none"
-            style={{ color: isFeed ? "var(--accent-strong)" : "var(--muted-strong)" }}
-          >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style={{ color: active(isFeed) }}>
             <rect x="2" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity={isFeed ? 1 : 0.7} />
             <rect x="12" y="3" width="8" height="8" rx="1.5" fill="currentColor" opacity={isFeed ? 0.5 : 0.35} />
             <rect x="2" y="13" width="8" height="6" rx="1.5" fill="currentColor" opacity={isFeed ? 0.5 : 0.35} />
             <rect x="12" y="13" width="8" height="6" rx="1.5" fill="currentColor" opacity={isFeed ? 0.7 : 0.5} />
           </svg>
-          <span
-            className="text-[10px] font-semibold uppercase tracking-wider leading-none"
-            style={{ color: isFeed ? "var(--accent-strong)" : "var(--muted-strong)" }}
-          >
+          <span className="text-[10px] font-semibold uppercase tracking-wider leading-none" style={{ color: active(isFeed) }}>
             {lang === "th" ? "ฟีด" : "Feed"}
-          </span>
-        </Link>
-
-        {/* Discover — scroll to filter on feed */}
-        <Link
-          href="/ophelia"
-          onClick={() => {
-            const filterEl = document.getElementById("ophelia-filter-bar");
-            if (filterEl) {
-              filterEl.scrollIntoView({ behavior: "smooth", block: "start" });
-              const input = filterEl.querySelector("input");
-              if (input) setTimeout(() => input.focus(), 300);
-            }
-          }}
-          className="flex flex-1 flex-col items-center justify-center gap-1 transition-opacity duration-100 active:opacity-60"
-          aria-label={lang === "th" ? "ค้นหา" : "Search"}
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            fill="none"
-            stroke="var(--muted-strong)"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <circle cx="9.5" cy="9.5" r="6" />
-            <line x1="14" y1="14" x2="19.5" y2="19.5" />
-          </svg>
-          <span
-            className="text-[10px] font-semibold uppercase tracking-wider leading-none"
-            style={{ color: "var(--muted-strong)" }}
-          >
-            {lang === "th" ? "ค้นหา" : "Search"}
           </span>
         </Link>
 
@@ -104,47 +81,26 @@ export function BottomNav() {
             }}
             aria-label={lang === "th" ? "เขียนความเห็น" : "Write a take"}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="#070707"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#070707" strokeWidth="2.2" strokeLinecap="round">
               <line x1="10" y1="4" x2="10" y2="16" />
               <line x1="4" y1="10" x2="16" y2="10" />
             </svg>
           </Link>
         </div>
 
-        {/* Events */}
+        {/* Divided — divisiveness leaderboard */}
         <Link
-          href="/ophelia"
+          href="/ophelia/leaderboard"
           className="flex flex-1 flex-col items-center justify-center gap-1 transition-opacity duration-100 active:opacity-60"
-          aria-label={lang === "th" ? "งาน" : "Events"}
+          aria-label={lang === "th" ? "ห้องแตกแยก" : "Divided"}
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 22 22"
-            fill="none"
-            stroke="var(--muted-strong)"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="4" width="16" height="15" rx="2" />
-            <line x1="3" y1="9" x2="19" y2="9" />
-            <line x1="7.5" y1="2" x2="7.5" y2="6" />
-            <line x1="14.5" y1="2" x2="14.5" y2="6" />
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke={active(isDivided)} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="19" x2="5" y2="11" />
+            <line x1="11" y1="19" x2="11" y2="4" />
+            <line x1="17" y1="19" x2="17" y2="8" />
           </svg>
-          <span
-            className="text-[10px] font-semibold uppercase tracking-wider leading-none"
-            style={{ color: "var(--muted-strong)" }}
-          >
-            {lang === "th" ? "งาน" : "Events"}
+          <span className="text-[10px] font-semibold uppercase tracking-wider leading-none" style={{ color: active(isDivided) }}>
+            {lang === "th" ? "แตกแยก" : "Divided"}
           </span>
         </Link>
 
@@ -158,22 +114,11 @@ export function BottomNav() {
             <ProfileAvatar userId={userId} isActive={isProfile} />
           ) : (
             <>
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 22 22"
-                fill="none"
-                stroke={isProfile ? "var(--accent-strong)" : "var(--muted-strong)"}
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              >
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke={active(isProfile)} strokeWidth="1.8" strokeLinecap="round">
                 <circle cx="11" cy="7.5" r="4" />
                 <path d="M3 19c0-4.418 3.582-8 8-8s8 3.582 8 8" />
               </svg>
-              <span
-                className="text-[10px] font-semibold uppercase tracking-wider leading-none"
-                style={{ color: isProfile ? "var(--accent-strong)" : "var(--muted-strong)" }}
-              >
+              <span className="text-[10px] font-semibold uppercase tracking-wider leading-none" style={{ color: active(isProfile) }}>
                 {lang === "th" ? "โปรไฟล์" : "Profile"}
               </span>
             </>

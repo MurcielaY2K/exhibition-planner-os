@@ -7,13 +7,29 @@ import type {
   OUser,
   OReview,
   OVenue,
-  AxisKey,
   OpheliaSession,
   FeedFilter,
 } from "./types";
 import { SEED_EVENTS, SEED_USERS, SEED_REVIEWS, SEED_VENUES } from "./seed";
 import { computeAggregate } from "./ratings";
 import type { AggregatedResponse } from "./types";
+import {
+  computeStreak,
+  computeTasteRelations,
+  computeTasteVector,
+  computeDivisivenessLeaderboard,
+  reviewsThisWeek,
+  type TasteRelation,
+  type TasteVector,
+  type LeaderboardEntry,
+} from "./taste";
+
+/** Demo "today" — keeps seeded streaks and daily questions coherent. */
+export const OPHELIA_TODAY = "2026-06-17";
+
+function todayStr(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 interface OpheliaState {
   events: OEvent[];
@@ -24,10 +40,16 @@ interface OpheliaState {
   feedFilter: FeedFilter;
   searchQuery: string;
 
+  // Engagement loop state
+  activityDates: string[]; // YYYY-MM-DD the user showed up & acted
+  dailyAnswers: Record<string, string>; // questionId -> optionId
+
   setSession: (patch: Partial<OpheliaSession>) => void;
   setFeedFilter: (filter: FeedFilter) => void;
   setSearchQuery: (q: string) => void;
   submitReview: (review: Omit<OReview, "id" | "createdAt">) => void;
+  answerDailyQuestion: (questionId: string, optionId: string) => void;
+  recordActivity: () => void;
 
   // derived helpers (not stored)
   getEvent: (id: string) => OEvent | undefined;
@@ -36,6 +58,17 @@ interface OpheliaState {
   getEventReviews: (eventId: string) => OReview[];
   getFilteredEvents: () => OEvent[];
   getCurrentUser: () => OUser | undefined;
+
+  // engagement / taste graph
+  getStreak: () => number;
+  getReviewsThisWeek: (userId: string) => number;
+  getTasteVector: (userId: string) => TasteVector;
+  getTasteRelations: (userId: string) => {
+    twin?: TasteRelation;
+    rival?: TasteRelation;
+    all: TasteRelation[];
+  };
+  getDivisivenessLeaderboard: () => LeaderboardEntry[];
 }
 
 export const useOpheliaStore = create<OpheliaState>()(
@@ -48,6 +81,8 @@ export const useOpheliaStore = create<OpheliaState>()(
       session: { userId: null, lang: "en" },
       feedFilter: "all",
       searchQuery: "",
+      activityDates: [],
+      dailyAnswers: {},
 
       setSession: (patch) =>
         set((state) => ({ session: { ...state.session, ...patch } })),
@@ -56,6 +91,25 @@ export const useOpheliaStore = create<OpheliaState>()(
 
       setSearchQuery: (q) => set({ searchQuery: q }),
 
+      recordActivity: () =>
+        set((state) => {
+          const today = todayStr();
+          if (state.activityDates.includes(today)) return state;
+          return { activityDates: [...state.activityDates, today] };
+        }),
+
+      answerDailyQuestion: (questionId, optionId) =>
+        set((state) => {
+          const today = todayStr();
+          const activityDates = state.activityDates.includes(today)
+            ? state.activityDates
+            : [...state.activityDates, today];
+          return {
+            dailyAnswers: { ...state.dailyAnswers, [questionId]: optionId },
+            activityDates,
+          };
+        }),
+
       submitReview: (review) => {
         const id = `r-user-${Date.now()}`;
         const newReview: OReview = {
@@ -63,8 +117,12 @@ export const useOpheliaStore = create<OpheliaState>()(
           id,
           createdAt: new Date().toISOString(),
         };
+        const today = todayStr();
         set((state) => ({
           reviews: [...state.reviews, newReview],
+          activityDates: state.activityDates.includes(today)
+            ? state.activityDates
+            : [...state.activityDates, today],
           users: state.users.map((u) =>
             u.id === review.userId
               ? {
@@ -100,6 +158,22 @@ export const useOpheliaStore = create<OpheliaState>()(
         const { session, users } = get();
         return session.userId ? users.find((u) => u.id === session.userId) : undefined;
       },
+
+      getStreak: () => computeStreak(get().activityDates, todayStr()),
+
+      getReviewsThisWeek: (userId) =>
+        reviewsThisWeek(userId, get().reviews, todayStr()),
+
+      getTasteVector: (userId) => computeTasteVector(userId, get().reviews),
+
+      getTasteRelations: (userId) =>
+        computeTasteRelations(userId, get().users, get().reviews),
+
+      getDivisivenessLeaderboard: () =>
+        computeDivisivenessLeaderboard(
+          get().events.map((e) => e.id),
+          get().reviews,
+        ),
 
       getFilteredEvents: () => {
         const { events, reviews, feedFilter, searchQuery } = get();
@@ -175,7 +249,22 @@ export const useOpheliaStore = create<OpheliaState>()(
         session: state.session,
         feedFilter: state.feedFilter,
         reviews: state.reviews.filter((r) => r.id.startsWith("r-user-")),
+        activityDates: state.activityDates,
+        dailyAnswers: state.dailyAnswers,
       }),
+      // Recombine seed reviews with persisted user reviews so the seeded
+      // dataset (and the taste graph it powers) survives reloads.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<OpheliaState>;
+        const userReviews = (p.reviews ?? []).filter((r) =>
+          r.id.startsWith("r-user-"),
+        );
+        return {
+          ...current,
+          ...p,
+          reviews: [...SEED_REVIEWS, ...userReviews],
+        };
+      },
     },
   ),
 );

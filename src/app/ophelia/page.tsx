@@ -4,9 +4,6 @@ import { useOpheliaStore } from "@/lib/ophelia/store";
 import { EventCard } from "@/features/ophelia/components/event-card";
 import { FilterBar } from "@/features/ophelia/components/filter-bar";
 
-const HERO_EN = "YOUR EYE\nIS VALID.";
-const HERO_TH = "สายตาคุณ\nมีคุณค่า.";
-
 const MISSION_EN =
   "OPHELIA is where Bangkok's art crowd calls it as they see it. No gatekeeping. No credentials required. Just honest takes on exhibitions, installations, and cultural moments across the city.";
 const MISSION_TH =

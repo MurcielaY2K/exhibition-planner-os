@@ -53,8 +53,9 @@ export function Nav() {
           {/* Desktop-only nav links */}
           <nav className="hidden items-center gap-1 sm:flex">
             {[
+              { href: "/ophelia/today", labelEN: "Today", labelTH: "วันนี้" },
               { href: "/ophelia", labelEN: "Feed", labelTH: "ฟีด" },
-              { href: "/ophelia", labelEN: "Events", labelTH: "งาน" },
+              { href: "/ophelia/leaderboard", labelEN: "Divided", labelTH: "แตกแยก" },
             ].map(({ href, labelEN, labelTH }) => (
               <Link
                 key={labelEN}

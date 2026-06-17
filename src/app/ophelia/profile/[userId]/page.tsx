@@ -4,6 +4,7 @@ import { use } from "react";
 import Link from "next/link";
 import { useOpheliaStore } from "@/lib/ophelia/store";
 import { EyeScoreBadge } from "@/features/ophelia/components/eye-score-badge";
+import { TasteCard } from "@/features/ophelia/components/taste-card";
 import { AXIS_LABELS, ALL_AXES } from "@/lib/ophelia/types";
 import type { AxisKey, LangPref } from "@/lib/ophelia/types";
 
@@ -251,6 +252,27 @@ export default function ProfilePage({
             </div>
           </div>
         </div>
+
+        {/* ─── TASTE CARD (shareable) ─── */}
+        {topAxes.length > 0 && (
+          <section className="mb-8">
+            <div className="mb-4 flex items-center gap-3">
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: "var(--muted-strong)" }}
+              >
+                {lang === "th" ? "การ์ดรสนิยม" : "Taste card"}
+              </p>
+              <div
+                className="flex-1"
+                style={{ height: 1, background: "var(--line)" }}
+              />
+            </div>
+            <div className="mx-auto max-w-sm">
+              <TasteCard userId={userId} />
+            </div>
+          </section>
+        )}
 
         {/* ─── TASTE PROFILE ─── */}
         {topAxes.length > 0 && (
