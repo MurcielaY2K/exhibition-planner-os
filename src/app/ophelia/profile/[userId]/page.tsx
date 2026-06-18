@@ -1,12 +1,12 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useOpheliaStore } from "@/lib/ophelia/store";
 import { EyeScoreBadge } from "@/features/ophelia/components/eye-score-badge";
 import { TasteCard } from "@/features/ophelia/components/taste-card";
 import { AXIS_LABELS, ALL_AXES } from "@/lib/ophelia/types";
-import type { AxisKey, LangPref } from "@/lib/ophelia/types";
+import type { AxisKey, LangPref, OUser } from "@/lib/ophelia/types";
 
 const AXIS_COLORS: Record<AxisKey, string> = {
   moved: "#7ec5d6",
@@ -25,6 +25,99 @@ const EVENT_TYPE_LABELS: Record<string, { en: string; th: string }> = {
   performance: { en: "Performance", th: "การแสดง" },
   venue: { en: "Venue", th: "สถานที่" },
 };
+
+function UserList({
+  users,
+  lang,
+  currentUserId,
+  isFollowing,
+  followUser,
+  unfollowUser,
+  emptyEN,
+  emptyTH,
+}: {
+  users: OUser[];
+  lang: LangPref;
+  currentUserId: string | null;
+  isFollowing: (from: string, to: string) => boolean;
+  followUser: (from: string, to: string) => void;
+  unfollowUser: (from: string, to: string) => void;
+  emptyEN: string;
+  emptyTH: string;
+}) {
+  if (users.length === 0) {
+    return (
+      <div
+        className="rounded-2xl p-6 text-center"
+        style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+      >
+        <p className="text-sm" style={{ color: "var(--muted-strong)" }}>
+          {lang === "th" ? emptyTH : emptyEN}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {users.map((u) => {
+        const name = lang === "th" ? u.nameTH : u.nameEN;
+        const following = currentUserId ? isFollowing(currentUserId, u.id) : false;
+        const canAct = !!currentUserId && currentUserId !== u.id;
+        return (
+          <div
+            key={u.id}
+            className="flex items-center gap-3 rounded-xl p-3"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+          >
+            <Link
+              href={`/ophelia/profile/${u.id}`}
+              className="flex flex-1 items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              style={{ textDecoration: "none", minWidth: 0 }}
+            >
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black"
+                style={{ background: u.avatarColor, color: "#070707" }}
+                aria-hidden
+              >
+                {u.handle.charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold" style={{ color: "var(--foreground)" }}>
+                  {name}
+                </p>
+                <p className="text-[10px] font-semibold" style={{ color: "var(--muted-strong)" }}>
+                  @{u.handle}
+                </p>
+              </div>
+            </Link>
+            {canAct && (
+              <button
+                type="button"
+                onClick={() =>
+                  following
+                    ? unfollowUser(currentUserId!, u.id)
+                    : followUser(currentUserId!, u.id)
+                }
+                className="shrink-0 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                style={{
+                  minHeight: "36px",
+                  background: following ? "var(--surface-soft)" : "var(--accent)",
+                  color: following ? "var(--foreground-soft)" : "#070707",
+                  border: following ? "1px solid var(--line)" : "none",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {following
+                  ? lang === "th" ? "ติดตามอยู่" : "Following"
+                  : lang === "th" ? "ติดตาม" : "Follow"}
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function getAxisLabel(key: AxisKey, lang: LangPref): string {
   const labels = AXIS_LABELS[key];
@@ -49,6 +142,13 @@ export default function ProfilePage({
   const getEvent = useOpheliaStore((s) => s.getEvent);
   const session = useOpheliaStore((s) => s.session);
   const reviews = useOpheliaStore((s) => s.reviews);
+  const followUser = useOpheliaStore((s) => s.followUser);
+  const unfollowUser = useOpheliaStore((s) => s.unfollowUser);
+  const isFollowing = useOpheliaStore((s) => s.isFollowing);
+  const getFollowers = useOpheliaStore((s) => s.getFollowers);
+  const getFollowing = useOpheliaStore((s) => s.getFollowing);
+
+  const [socialView, setSocialView] = useState<"followers" | "following" | null>(null);
 
   const user = getUser(userId);
   const lang = session.lang;
@@ -111,6 +211,10 @@ export default function ProfilePage({
   const displayName = lang === "th" ? user.nameTH : user.nameEN;
   const initial = user.handle.charAt(0).toUpperCase();
   const isCurrentUser = session.userId === userId;
+  const canFollow = !!session.userId && !isCurrentUser;
+  const alreadyFollowing = canFollow && isFollowing(session.userId!, userId);
+  const followers = getFollowers(userId);
+  const following = getFollowing(userId);
 
   return (
     <div style={{ background: "var(--background)", minHeight: "100vh" }}>
@@ -205,6 +309,29 @@ export default function ProfilePage({
                 </p>
               )}
 
+              {/* Follow button */}
+              {canFollow && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    alreadyFollowing
+                      ? unfollowUser(session.userId!, userId)
+                      : followUser(session.userId!, userId)
+                  }
+                  className="mt-4 rounded-full px-5 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{
+                    minHeight: "44px",
+                    background: alreadyFollowing ? "var(--surface-soft)" : "var(--accent)",
+                    color: alreadyFollowing ? "var(--foreground-soft)" : "#070707",
+                    border: alreadyFollowing ? "1px solid var(--line)" : "none",
+                  }}
+                >
+                  {alreadyFollowing
+                    ? lang === "th" ? "ติดตามอยู่" : "Following"
+                    : lang === "th" ? "ติดตาม" : "Follow"}
+                </button>
+              )}
+
               {/* Stats strip */}
               <div className="mt-5 flex flex-wrap gap-5">
                 {[
@@ -212,22 +339,45 @@ export default function ProfilePage({
                     value: user.reviewCount,
                     labelEN: "reviews",
                     labelTH: "รีวิว",
+                    onClick: undefined,
                   },
                   {
                     value: user.attendedCount,
                     labelEN: "attended",
                     labelTH: "งานที่ไป",
+                    onClick: undefined,
+                  },
+                  {
+                    value: followers.length,
+                    labelEN: "followers",
+                    labelTH: "ผู้ติดตาม",
+                    onClick: () => setSocialView(socialView === "followers" ? null : "followers"),
+                  },
+                  {
+                    value: following.length,
+                    labelEN: "following",
+                    labelTH: "กำลังติดตาม",
+                    onClick: () => setSocialView(socialView === "following" ? null : "following"),
                   },
                   {
                     value: user.eyeScore,
                     labelEN: "eye score",
                     labelTH: "คะแนนสายตา",
+                    onClick: undefined,
                   },
-                ].map(({ value, labelEN, labelTH }) => (
-                  <div key={labelEN} className="flex flex-col gap-0.5">
+                ].map(({ value, labelEN, labelTH, onClick }) => (
+                  <div
+                    key={labelEN}
+                    className="flex flex-col gap-0.5"
+                    style={{ cursor: onClick ? "pointer" : "default" }}
+                    onClick={onClick}
+                    role={onClick ? "button" : undefined}
+                    tabIndex={onClick ? 0 : undefined}
+                    onKeyDown={onClick ? (e) => e.key === "Enter" && onClick() : undefined}
+                  >
                     <span
                       className="text-xl font-black tabular-nums leading-none"
-                      style={{ color: "var(--foreground)" }}
+                      style={{ color: onClick ? "var(--accent)" : "var(--foreground)" }}
                     >
                       {value.toLocaleString()}
                     </span>
@@ -252,6 +402,61 @@ export default function ProfilePage({
             </div>
           </div>
         </div>
+
+        {/* ─── FOLLOWERS / FOLLOWING PANEL ─── */}
+        {socialView !== null && (
+          <section className="mb-8">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSocialView("followers")}
+                  className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{
+                    background: socialView === "followers" ? "var(--accent)" : "var(--surface-soft)",
+                    color: socialView === "followers" ? "#070707" : "var(--muted-strong)",
+                    border: socialView === "followers" ? "none" : "1px solid var(--line)",
+                  }}
+                >
+                  {lang === "th" ? `ผู้ติดตาม ${followers.length}` : `${followers.length} Followers`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSocialView("following")}
+                  className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  style={{
+                    background: socialView === "following" ? "var(--accent)" : "var(--surface-soft)",
+                    color: socialView === "following" ? "#070707" : "var(--muted-strong)",
+                    border: socialView === "following" ? "none" : "1px solid var(--line)",
+                  }}
+                >
+                  {lang === "th" ? `กำลังติดตาม ${following.length}` : `${following.length} Following`}
+                </button>
+              </div>
+              <div className="flex-1" style={{ height: 1, background: "var(--line)" }} />
+              <button
+                type="button"
+                onClick={() => setSocialView(null)}
+                className="text-[11px] font-semibold"
+                style={{ color: "var(--muted-strong)" }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <UserList
+              users={socialView === "followers" ? followers : following}
+              lang={lang}
+              currentUserId={session.userId}
+              isFollowing={isFollowing}
+              followUser={followUser}
+              unfollowUser={unfollowUser}
+              emptyEN={socialView === "followers" ? "No followers yet." : "Not following anyone yet."}
+              emptyTH={socialView === "followers" ? "ยังไม่มีผู้ติดตาม" : "ยังไม่ได้ติดตามใคร"}
+            />
+          </section>
+        )}
 
         {/* ─── TASTE CARD (shareable) ─── */}
         {topAxes.length > 0 && (

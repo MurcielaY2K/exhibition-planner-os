@@ -110,9 +110,16 @@ export interface OpheliaSession {
   lang: LangPref;
 }
 
+export interface OFollow {
+  fromUserId: string;
+  toUserId: string;
+  createdAt: string;
+}
+
 export type FeedFilter =
   | "all"
   | "divisive"
   | "recommended"
   | "ending-soon"
-  | "free";
+  | "free"
+  | "following";

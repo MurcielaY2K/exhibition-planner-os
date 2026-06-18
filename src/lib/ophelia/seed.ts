@@ -1,4 +1,4 @@
-import type { OEvent, OUser, OReview, OVenue } from "./types";
+import type { OEvent, OUser, OReview, OVenue, OFollow } from "./types";
 
 export const SEED_VENUES: OVenue[] = [
   { id: "v-bacc", name: "Bangkok Art and Culture Centre", area: "Siam", geoLat: 13.7466, geoLng: 100.5293, type: "institution" },
@@ -443,4 +443,21 @@ export const SEED_REVIEWS: OReview[] = [
   { id: "r-38", userId: "u-2", targetType: "event", targetId: "evt-12", axisKeys: ["moved", "changedMyMind"], writtenTakeEN: "How is this show still up. Grateful that it is.", attendanceVerified: true, createdAt: "2026-05-08T10:00:00Z" },
   { id: "r-39", userId: "u-8", targetType: "event", targetId: "evt-12", axisKeys: ["cantStopThinking", "moved", "changedMyMind"], writtenTakeEN: "Required viewing. Not optional. Bring a notebook.", attendanceVerified: true, createdAt: "2026-05-09T14:00:00Z" },
   { id: "r-40", userId: "u-6", targetType: "event", targetId: "evt-12", axisKeys: ["moved", "underrated"], attendanceVerified: true, createdAt: "2026-05-10T09:00:00Z" },
+];
+
+export const SEED_FOLLOWS: OFollow[] = [
+  { fromUserId: "u-1", toUserId: "u-2", createdAt: "2026-01-16T00:00:00.000Z" },
+  { fromUserId: "u-1", toUserId: "u-4", createdAt: "2026-01-20T00:00:00.000Z" },
+  { fromUserId: "u-2", toUserId: "u-1", createdAt: "2026-01-17T00:00:00.000Z" },
+  { fromUserId: "u-2", toUserId: "u-6", createdAt: "2026-01-25T00:00:00.000Z" },
+  { fromUserId: "u-3", toUserId: "u-1", createdAt: "2026-02-11T00:00:00.000Z" },
+  { fromUserId: "u-3", toUserId: "u-7", createdAt: "2026-02-12T00:00:00.000Z" },
+  { fromUserId: "u-4", toUserId: "u-2", createdAt: "2026-01-05T00:00:00.000Z" },
+  { fromUserId: "u-4", toUserId: "u-6", createdAt: "2026-01-23T00:00:00.000Z" },
+  { fromUserId: "u-5", toUserId: "u-1", createdAt: "2026-03-06T00:00:00.000Z" },
+  { fromUserId: "u-5", toUserId: "u-4", createdAt: "2026-03-07T00:00:00.000Z" },
+  { fromUserId: "u-6", toUserId: "u-4", createdAt: "2026-01-24T00:00:00.000Z" },
+  { fromUserId: "u-7", toUserId: "u-4", createdAt: "2026-02-02T00:00:00.000Z" },
+  { fromUserId: "u-8", toUserId: "u-4", createdAt: "2026-01-11T00:00:00.000Z" },
+  { fromUserId: "u-8", toUserId: "u-2", createdAt: "2026-01-12T00:00:00.000Z" },
 ];

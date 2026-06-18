@@ -7,10 +7,12 @@ interface FilterOption {
   value: FeedFilter;
   en: string;
   th: string;
+  requiresAuth?: boolean;
 }
 
 const FILTERS: FilterOption[] = [
   { value: "all", en: "All", th: "ทั้งหมด" },
+  { value: "following", en: "Following", th: "ที่ติดตาม", requiresAuth: true },
   { value: "divisive", en: "Divisive right now", th: "ถกเถียงสุด" },
   { value: "recommended", en: "Recommended", th: "แนะนำ" },
   { value: "ending-soon", en: "Ending soon", th: "ใกล้ปิด" },
@@ -23,6 +25,7 @@ export function FilterBar() {
   const setFeedFilter = useOpheliaStore((s) => s.setFeedFilter);
   const setSearchQuery = useOpheliaStore((s) => s.setSearchQuery);
   const lang = useOpheliaStore((s) => s.session.lang);
+  const userId = useOpheliaStore((s) => s.session.userId);
 
   return (
     <div id="ophelia-filter-bar" className="w-full">
@@ -74,7 +77,7 @@ export function FilterBar() {
         className="scrollbar-subtle flex gap-2 overflow-x-auto"
         style={{ WebkitOverflowScrolling: "touch", paddingBottom: "2px" }}
       >
-        {FILTERS.map((filter) => {
+        {FILTERS.filter((f) => !f.requiresAuth || !!userId).map((filter) => {
           const isActive = feedFilter === filter.value;
           const label = lang === "th" ? filter.th : filter.en;
           return (

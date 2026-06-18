@@ -7,10 +7,11 @@ import type {
   OUser,
   OReview,
   OVenue,
+  OFollow,
   OpheliaSession,
   FeedFilter,
 } from "./types";
-import { SEED_EVENTS, SEED_USERS, SEED_REVIEWS, SEED_VENUES } from "./seed";
+import { SEED_EVENTS, SEED_USERS, SEED_REVIEWS, SEED_VENUES, SEED_FOLLOWS } from "./seed";
 import { computeAggregate } from "./ratings";
 import type { AggregatedResponse } from "./types";
 import {
@@ -36,6 +37,7 @@ interface OpheliaState {
   users: OUser[];
   reviews: OReview[];
   venues: OVenue[];
+  follows: OFollow[];
   session: OpheliaSession;
   feedFilter: FeedFilter;
   searchQuery: string;
@@ -50,6 +52,13 @@ interface OpheliaState {
   submitReview: (review: Omit<OReview, "id" | "createdAt">) => void;
   answerDailyQuestion: (questionId: string, optionId: string) => void;
   recordActivity: () => void;
+
+  // follow graph
+  followUser: (fromUserId: string, toUserId: string) => void;
+  unfollowUser: (fromUserId: string, toUserId: string) => void;
+  isFollowing: (fromUserId: string, toUserId: string) => boolean;
+  getFollowers: (userId: string) => OUser[];
+  getFollowing: (userId: string) => OUser[];
 
   // derived helpers (not stored)
   getEvent: (id: string) => OEvent | undefined;
@@ -78,6 +87,7 @@ export const useOpheliaStore = create<OpheliaState>()(
       users: SEED_USERS,
       reviews: SEED_REVIEWS,
       venues: SEED_VENUES,
+      follows: SEED_FOLLOWS,
       session: { userId: null, lang: "en" },
       feedFilter: "all",
       searchQuery: "",
@@ -109,6 +119,48 @@ export const useOpheliaStore = create<OpheliaState>()(
             activityDates,
           };
         }),
+
+      followUser: (fromUserId, toUserId) =>
+        set((state) => {
+          const already = state.follows.some(
+            (f) => f.fromUserId === fromUserId && f.toUserId === toUserId,
+          );
+          if (already) return state;
+          return {
+            follows: [
+              ...state.follows,
+              { fromUserId, toUserId, createdAt: new Date().toISOString() },
+            ],
+          };
+        }),
+
+      unfollowUser: (fromUserId, toUserId) =>
+        set((state) => ({
+          follows: state.follows.filter(
+            (f) => !(f.fromUserId === fromUserId && f.toUserId === toUserId),
+          ),
+        })),
+
+      isFollowing: (fromUserId, toUserId) =>
+        get().follows.some(
+          (f) => f.fromUserId === fromUserId && f.toUserId === toUserId,
+        ),
+
+      getFollowers: (userId) => {
+        const { follows, users } = get();
+        const followerIds = follows
+          .filter((f) => f.toUserId === userId)
+          .map((f) => f.fromUserId);
+        return users.filter((u) => followerIds.includes(u.id));
+      },
+
+      getFollowing: (userId) => {
+        const { follows, users } = get();
+        const followingIds = follows
+          .filter((f) => f.fromUserId === userId)
+          .map((f) => f.toUserId);
+        return users.filter((u) => followingIds.includes(u.id));
+      },
 
       submitReview: (review) => {
         const id = `r-user-${Date.now()}`;
@@ -176,7 +228,7 @@ export const useOpheliaStore = create<OpheliaState>()(
         ),
 
       getFilteredEvents: () => {
-        const { events, reviews, feedFilter, searchQuery } = get();
+        const { events, reviews, follows, session, feedFilter, searchQuery } = get();
         let result = [...events];
 
         if (searchQuery.trim()) {
@@ -238,6 +290,22 @@ export const useOpheliaStore = create<OpheliaState>()(
             result = result.filter((e) => !e.isPaid);
             break;
           }
+          case "following": {
+            if (session.userId) {
+              const followingIds = follows
+                .filter((f) => f.fromUserId === session.userId)
+                .map((f) => f.toUserId);
+              const reviewedEventIds = new Set(
+                reviews
+                  .filter((r) => followingIds.includes(r.userId))
+                  .map((r) => r.targetId),
+              );
+              result = result.filter((e) => reviewedEventIds.has(e.id));
+            } else {
+              result = [];
+            }
+            break;
+          }
         }
 
         return result;
@@ -249,11 +317,10 @@ export const useOpheliaStore = create<OpheliaState>()(
         session: state.session,
         feedFilter: state.feedFilter,
         reviews: state.reviews.filter((r) => r.id.startsWith("r-user-")),
+        follows: state.follows,
         activityDates: state.activityDates,
         dailyAnswers: state.dailyAnswers,
       }),
-      // Recombine seed reviews with persisted user reviews so the seeded
-      // dataset (and the taste graph it powers) survives reloads.
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<OpheliaState>;
         const userReviews = (p.reviews ?? []).filter((r) =>
@@ -263,6 +330,8 @@ export const useOpheliaStore = create<OpheliaState>()(
           ...current,
           ...p,
           reviews: [...SEED_REVIEWS, ...userReviews],
+          // Use persisted follows if they exist, else start with seed follows
+          follows: (p.follows ?? []).length > 0 ? p.follows! : SEED_FOLLOWS,
         };
       },
     },
