@@ -11,7 +11,7 @@ export function ProjectShell({
   children,
 }: {
   project: Project;
-  activePath: "overview" | "planner" | "artworks" | "export";
+  activePath: "place" | "planner" | "artworks" | "export";
   title: string;
   description: string;
   stats?: Array<{ label: string; value: string }>;
@@ -24,10 +24,10 @@ export function ProjectShell({
       {/* Mobile bottom navigation bar — hidden on xl where sidebar is visible */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--line)] bg-[rgba(7,7,7,0.92)] backdrop-blur-sm safe-bottom xl:hidden">
         <div className="grid grid-cols-4">
-          <MobileNavButton href={baseHref} isActive={activePath === "overview"} label="Overview" />
-          <MobileNavButton href={`${baseHref}/planner`} isActive={activePath === "planner"} label="Planner" />
+          <MobileNavButton href={baseHref} isActive={activePath === "place"} label="Place" />
           <MobileNavButton href={`${baseHref}/artworks`} isActive={activePath === "artworks"} label="Artworks" />
-          <MobileNavButton href={`${baseHref}/export`} isActive={activePath === "export"} label="Exports" />
+          <MobileNavButton href={`${baseHref}/planner`} isActive={activePath === "planner"} label="Planner" />
+          <MobileNavButton href={`${baseHref}/export`} isActive={activePath === "export"} label="Share" />
         </div>
       </nav>
 
@@ -61,13 +61,8 @@ export function ProjectShell({
               <nav className="mt-5 grid gap-2">
                 <NavButton
                   href={baseHref}
-                  isActive={activePath === "overview"}
-                  label="Overview"
-                />
-                <NavButton
-                  href={`${baseHref}/planner`}
-                  isActive={activePath === "planner"}
-                  label="Planner"
+                  isActive={activePath === "place"}
+                  label="Place"
                 />
                 <NavButton
                   href={`${baseHref}/artworks`}
@@ -75,9 +70,14 @@ export function ProjectShell({
                   label="Artworks"
                 />
                 <NavButton
+                  href={`${baseHref}/planner`}
+                  isActive={activePath === "planner"}
+                  label="Planner"
+                />
+                <NavButton
                   href={`${baseHref}/export`}
                   isActive={activePath === "export"}
-                  label="Exports"
+                  label="Share"
                 />
               </nav>
 

@@ -1,9 +1,9 @@
-import { ProjectOverviewPage } from "@/features/projects/components/project-overview-page";
+import { OnSitePage } from "@/features/scene/components/on-site-page";
 
-export default async function ProjectOverviewRoute({
+export default async function ProjectRoute({
   params,
 }: PageProps<"/projects/[projectId]">) {
   const { projectId } = await params;
 
-  return <ProjectOverviewPage projectId={projectId} />;
+  return <OnSitePage projectId={projectId} />;
 }

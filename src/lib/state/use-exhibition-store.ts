@@ -31,12 +31,35 @@ import type {
   ProjectBundle,
   Room,
   SavedCameraView,
+  Scene,
+  SceneCalibration,
+  ScenePlacement,
 } from "@/lib/domain/types";
 
 interface ExhibitionState {
   projects: ProjectBundle[];
   ui: Record<string, PlannerSelection>;
+  scenes: Record<string, Scene>;
   createProject: (input: CreateProjectInput) => string;
+  setSceneImage: (
+    projectId: string,
+    image: { imageUrl: string; naturalWidth: number; naturalHeight: number },
+  ) => void;
+  setSceneCalibration: (projectId: string, calibration?: SceneCalibration) => void;
+  addScenePlacement: (
+    projectId: string,
+    artworkId: string,
+    xNorm: number,
+    yNorm: number,
+    widthNorm?: number,
+  ) => string;
+  updateScenePlacement: (
+    projectId: string,
+    placementId: string,
+    patch: Partial<Omit<ScenePlacement, "id">>,
+  ) => void;
+  removeScenePlacement: (projectId: string, placementId: string) => void;
+  clearScene: (projectId: string) => void;
   updateProject: (projectId: string, patch: Partial<Project>) => void;
   updateRoom: (projectId: string, roomId: string, patch: Partial<Room>) => void;
   setActiveView: (projectId: string, view: PlannerView) => void;
@@ -168,11 +191,99 @@ function ensurePlannerSelection(
   };
 }
 
+export function ensureScene(scene?: Scene): Scene {
+  return {
+    imageUrl: scene?.imageUrl,
+    naturalWidth: scene?.naturalWidth,
+    naturalHeight: scene?.naturalHeight,
+    calibration: scene?.calibration,
+    placements: scene?.placements ?? [],
+  };
+}
+
+export function getProjectScene(
+  scenes: Record<string, Scene>,
+  projectId: string,
+): Scene {
+  return ensureScene(scenes[projectId]);
+}
+
 export const useExhibitionStore = create<ExhibitionState>()(
   persist(
     (set) => ({
   projects: [seedProject],
   ui: seedSelection,
+  scenes: {},
+  setSceneImage: (projectId, image) =>
+    set((state) => ({
+      scenes: {
+        ...state.scenes,
+        [projectId]: {
+          ...ensureScene(state.scenes[projectId]),
+          imageUrl: image.imageUrl,
+          naturalWidth: image.naturalWidth,
+          naturalHeight: image.naturalHeight,
+        },
+      },
+    })),
+  setSceneCalibration: (projectId, calibration) =>
+    set((state) => ({
+      scenes: {
+        ...state.scenes,
+        [projectId]: {
+          ...ensureScene(state.scenes[projectId]),
+          calibration,
+        },
+      },
+    })),
+  addScenePlacement: (projectId, artworkId, xNorm, yNorm, widthNorm) => {
+    const id = createId("scene-placement");
+    set((state) => {
+      const scene = ensureScene(state.scenes[projectId]);
+      const placement: ScenePlacement = { id, artworkId, xNorm, yNorm, widthNorm };
+      return {
+        scenes: {
+          ...state.scenes,
+          [projectId]: { ...scene, placements: [...scene.placements, placement] },
+        },
+      };
+    });
+    return id;
+  },
+  updateScenePlacement: (projectId, placementId, patch) =>
+    set((state) => {
+      const scene = ensureScene(state.scenes[projectId]);
+      return {
+        scenes: {
+          ...state.scenes,
+          [projectId]: {
+            ...scene,
+            placements: scene.placements.map((placement) =>
+              placement.id === placementId ? { ...placement, ...patch } : placement,
+            ),
+          },
+        },
+      };
+    }),
+  removeScenePlacement: (projectId, placementId) =>
+    set((state) => {
+      const scene = ensureScene(state.scenes[projectId]);
+      return {
+        scenes: {
+          ...state.scenes,
+          [projectId]: {
+            ...scene,
+            placements: scene.placements.filter((placement) => placement.id !== placementId),
+          },
+        },
+      };
+    }),
+  clearScene: (projectId) =>
+    set((state) => {
+      const next = { ...state.scenes };
+      delete next[projectId];
+      return { scenes: next };
+    }),
   createProject: (input) => {
     const projectId = createId("project");
     const roomId = createId("room");
@@ -1073,12 +1184,12 @@ export const useExhibitionStore = create<ExhibitionState>()(
 }),
     {
       name: "exhibition-planner-store",
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => getExhibitionStorage()),
       // Persisted bundles/selections evolve over time (fields like
-      // savedCameraViews, ambientLight, primaryPlacementId were added). Older
-      // payloads rehydrate without running through the action-level defaulting
-      // helpers, so normalize every selection here to backfill missing fields.
+      // savedCameraViews, ambientLight, primaryPlacementId, and the scenes map
+      // were added). Older payloads rehydrate without running through the
+      // action-level defaulting helpers, so normalize here to backfill fields.
       migrate: (persisted) => {
         const state = persisted as Partial<ExhibitionState> | undefined;
         if (!state) {
@@ -1089,10 +1200,16 @@ export const useExhibitionStore = create<ExhibitionState>()(
         for (const [projectId, selection] of Object.entries(ui)) {
           normalizedUi[projectId] = ensurePlannerSelection(selection);
         }
+        const scenes = state.scenes ?? {};
+        const normalizedScenes: Record<string, Scene> = {};
+        for (const [projectId, scene] of Object.entries(scenes)) {
+          normalizedScenes[projectId] = ensureScene(scene);
+        }
         return {
           ...state,
           projects: state.projects ?? [],
           ui: normalizedUi,
+          scenes: normalizedScenes,
         } as ExhibitionState;
       },
     },

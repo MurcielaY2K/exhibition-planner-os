@@ -233,3 +233,35 @@ export interface CreateProjectInput {
   depthMm: number;
   heightMm: number;
 }
+
+// --- On-Site photo composite ("Place" experience) ---------------------------
+
+// A single artwork dropped onto a wall photo. Position is the artwork CENTER in
+// normalized image coordinates (0..1 across width/height), so it is resolution-
+// independent. widthNorm is only used as a manual size fallback before the photo
+// has been calibrated; once calibration exists, true real-world scale wins.
+export interface ScenePlacement {
+  id: string;
+  artworkId: string;
+  xNorm: number;
+  yNorm: number;
+  widthNorm?: number;
+}
+
+// Two reference points (normalized) plus the real-world distance between them.
+// Lets us derive true millimetre scale for the whole photo.
+export interface SceneCalibration {
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+  referenceLengthMm: number;
+}
+
+export interface Scene {
+  imageUrl?: string;
+  naturalWidth?: number;
+  naturalHeight?: number;
+  calibration?: SceneCalibration;
+  placements: ScenePlacement[];
+}
