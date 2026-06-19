@@ -246,6 +246,7 @@ export interface ScenePlacement {
   xNorm: number;
   yNorm: number;
   widthNorm?: number;
+  rotationDeg?: number;
 }
 
 // Two reference points (normalized) plus the real-world distance between them.

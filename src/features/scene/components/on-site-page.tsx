@@ -14,6 +14,13 @@ import type { Artwork, Scene, SceneCalibration, ScenePlacement } from "@/lib/dom
 
 const DEFAULT_WIDTH_NORM = 0.22;
 
+// One-tap references so you don't have to type a measurement on site.
+const CALIBRATION_PRESETS: Array<{ label: string; cm: number; icon: string }> = [
+  { label: "Standard door", cm: 210, icon: "🚪" },
+  { label: "Tall door", cm: 230, icon: "🚪" },
+  { label: "Window", cm: 120, icon: "🪟" },
+];
+
 interface CalibrationDraft {
   a?: { x: number; y: number };
   b?: { x: number; y: number };
@@ -234,11 +241,8 @@ export function OnSitePage({ projectId }: { projectId: string }) {
                     selected={selectedId === placement.id}
                     disabled={calibrating}
                     onSelect={() => setSelectedId(placement.id)}
-                    onMove={(xNorm, yNorm) =>
-                      updateScenePlacement(projectId, placement.id, { xNorm, yNorm })
-                    }
-                    onResize={(widthNorm) =>
-                      updateScenePlacement(projectId, placement.id, { widthNorm })
+                    onUpdate={(patch) =>
+                      updateScenePlacement(projectId, placement.id, patch)
                     }
                     onRemove={() => {
                       removeScenePlacement(projectId, placement.id);
@@ -280,9 +284,30 @@ export function OnSitePage({ projectId }: { projectId: string }) {
         {calibrating ? (
           <div className="safe-x absolute inset-x-0 bottom-3 mx-auto flex max-w-md flex-col gap-3 rounded-[20px] border border-[var(--line)] bg-[rgba(12,12,12,0.94)] p-4 backdrop-blur">
             <p className="text-[13px] leading-5 text-[var(--foreground-soft)]">
-              Tap two points a known distance apart — a door edge to edge, a window,
-              anything you can measure. Then enter the real distance.
+              Tap the top and bottom of a reference you know — a door, a window —
+              then confirm its real size. Pick a preset to skip typing.
             </p>
+            <div className="flex flex-wrap gap-2">
+              {CALIBRATION_PRESETS.map((preset) => {
+                const active = String(preset.cm) === refLengthCm.trim();
+                return (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setRefLengthCm(String(preset.cm))}
+                    className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium transition ${
+                      active
+                        ? "border-[var(--accent)] bg-[rgba(182,198,42,0.16)] text-[var(--foreground)]"
+                        : "border-[var(--line)] text-[var(--muted-strong)] hover:bg-[var(--surface-soft)]"
+                    }`}
+                  >
+                    <span aria-hidden>{preset.icon}</span>
+                    {preset.label}
+                    <span className="text-[var(--muted-strong)]">{preset.cm}</span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex items-center gap-2">
               <label className="text-[12px] text-[var(--muted-strong)]">Real distance</label>
               <input
@@ -416,8 +441,7 @@ function PlacementView({
   selected,
   disabled,
   onSelect,
-  onMove,
-  onResize,
+  onUpdate,
   onRemove,
 }: {
   placement: ScenePlacement;
@@ -427,28 +451,43 @@ function PlacementView({
   selected: boolean;
   disabled: boolean;
   onSelect: () => void;
-  onMove: (xNorm: number, yNorm: number) => void;
-  onResize: (widthNorm: number) => void;
+  onUpdate: (patch: Partial<Omit<ScenePlacement, "id">>) => void;
   onRemove: () => void;
 }) {
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-    moved: boolean;
-  } | null>(null);
-  const resizeRef = useRef<{ pointerId: number; startX: number; startWidthNorm: number } | null>(
-    null,
-  );
+  // Track every active pointer on this element so we can tell a one-finger drag
+  // from a two-finger pinch/rotate gesture.
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gestureRef = useRef<
+    | { mode: "drag"; startX: number; startY: number; originX: number; originY: number; moved: boolean }
+    | {
+        mode: "transform";
+        startDist: number;
+        startAngle: number;
+        startWidthNorm: number;
+        startRotation: number;
+      }
+    | null
+  >(null);
 
+  const rotationDeg = placement.rotationDeg ?? 0;
   const { widthPx, heightPx } = placementPixelSize(placement, artwork, mmPerPx, stageSize);
   const centerX = placement.xNorm * stageSize.width;
   const centerY = placement.yNorm * stageSize.height;
 
   const widthCm = Math.round(mmToCm(artwork.widthMm));
   const heightCm = Math.round(mmToCm(artwork.heightMm));
+
+  function beginTransform() {
+    const points = Array.from(pointersRef.current.values()).slice(0, 2);
+    if (points.length < 2) return;
+    gestureRef.current = {
+      mode: "transform",
+      startDist: distance(points[0], points[1]),
+      startAngle: angleDeg(points[0], points[1]),
+      startWidthNorm: placement.widthNorm ?? DEFAULT_WIDTH_NORM,
+      startRotation: rotationDeg,
+    };
+  }
 
   return (
     <div
@@ -464,54 +503,90 @@ function PlacementView({
         if (disabled) return;
         event.stopPropagation();
         (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-        dragRef.current = {
-          pointerId: event.pointerId,
-          startX: event.clientX,
-          startY: event.clientY,
-          originX: placement.xNorm,
-          originY: placement.yNorm,
-          moved: false,
-        };
+        pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointersRef.current.size >= 2) {
+          beginTransform();
+        } else {
+          gestureRef.current = {
+            mode: "drag",
+            startX: event.clientX,
+            startY: event.clientY,
+            originX: placement.xNorm,
+            originY: placement.yNorm,
+            moved: false,
+          };
+        }
       }}
       onPointerMove={(event) => {
-        const drag = dragRef.current;
-        if (!drag || drag.pointerId !== event.pointerId || stageSize.width === 0) return;
-        const dx = (event.clientX - drag.startX) / stageSize.width;
-        const dy = (event.clientY - drag.startY) / stageSize.height;
-        if (Math.abs(dx) > 0.004 || Math.abs(dy) > 0.004) drag.moved = true;
-        onMove(clamp01(drag.originX + dx), clamp01(drag.originY + dy));
+        if (!pointersRef.current.has(event.pointerId) || stageSize.width === 0) return;
+        pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const gesture = gestureRef.current;
+        if (!gesture) return;
+
+        if (gesture.mode === "transform") {
+          const points = Array.from(pointersRef.current.values()).slice(0, 2);
+          if (points.length < 2) return;
+          const ratio = distance(points[0], points[1]) / Math.max(1, gesture.startDist);
+          const nextRotation = gesture.startRotation + (angleDeg(points[0], points[1]) - gesture.startAngle);
+          const patch: Partial<ScenePlacement> = { rotationDeg: Math.round(nextRotation) };
+          // Pinch only changes size in free mode; calibrated stays true-scale.
+          if (!mmPerPx) {
+            patch.widthNorm = Math.min(1.5, Math.max(0.03, gesture.startWidthNorm * ratio));
+          }
+          onUpdate(patch);
+          return;
+        }
+
+        // Single-finger drag.
+        const dx = (event.clientX - gesture.startX) / stageSize.width;
+        const dy = (event.clientY - gesture.startY) / stageSize.height;
+        if (Math.abs(dx) > 0.004 || Math.abs(dy) > 0.004) gesture.moved = true;
+        onUpdate({ xNorm: clamp01(gesture.originX + dx), yNorm: clamp01(gesture.originY + dy) });
       }}
-      onPointerUp={() => {
-        const drag = dragRef.current;
-        dragRef.current = null;
-        if (drag && !drag.moved) onSelect();
+      onPointerUp={(event) => {
+        pointersRef.current.delete(event.pointerId);
+        const gesture = gestureRef.current;
+        if (pointersRef.current.size === 0) {
+          if (gesture?.mode === "drag" && !gesture.moved) onSelect();
+          gestureRef.current = null;
+        } else {
+          // Lifting one finger of a pinch ends the gesture cleanly; the
+          // remaining finger waits until released.
+          gestureRef.current = null;
+        }
       }}
-      onPointerCancel={() => {
-        dragRef.current = null;
+      onPointerCancel={(event) => {
+        pointersRef.current.delete(event.pointerId);
+        gestureRef.current = null;
       }}
     >
-      {/* Soft drop shadow for realism */}
+      {/* Rotated art layer (shadow + image) so the on-screen controls stay upright */}
       <div
         className="absolute inset-0"
-        style={{ boxShadow: "0 10px 26px rgba(0,0,0,0.42)", borderRadius: 2 }}
-      />
-      {artwork.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={artwork.imageUrl}
-          alt={artwork.title}
-          className="relative h-full w-full object-cover"
-          draggable={false}
-          style={{ outline: selected ? "2px solid var(--accent)" : "1px solid rgba(0,0,0,0.35)" }}
-        />
-      ) : (
+        style={{ transform: `rotate(${rotationDeg}deg)`, transformOrigin: "center" }}
+      >
         <div
-          className="relative flex h-full w-full items-center justify-center bg-[#e9e6df] p-1 text-center text-[10px] text-[#444]"
-          style={{ outline: selected ? "2px solid var(--accent)" : "1px solid rgba(0,0,0,0.35)" }}
-        >
-          {artwork.title}
-        </div>
-      )}
+          className="absolute inset-0"
+          style={{ boxShadow: "0 10px 26px rgba(0,0,0,0.42)", borderRadius: 2 }}
+        />
+        {artwork.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={artwork.imageUrl}
+            alt={artwork.title}
+            className="relative h-full w-full object-cover"
+            draggable={false}
+            style={{ outline: selected ? "2px solid var(--accent)" : "1px solid rgba(0,0,0,0.35)" }}
+          />
+        ) : (
+          <div
+            className="relative flex h-full w-full items-center justify-center bg-[#e9e6df] p-1 text-center text-[10px] text-[#444]"
+            style={{ outline: selected ? "2px solid var(--accent)" : "1px solid rgba(0,0,0,0.35)" }}
+          >
+            {artwork.title}
+          </div>
+        )}
+      </div>
 
       {selected && !disabled ? (
         <>
@@ -526,41 +601,77 @@ function PlacementView({
           </button>
           <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/80 px-2 py-0.5 text-[10px] text-white">
             {widthCm}×{heightCm} cm{mmPerPx ? " · true scale" : ""}
+            {rotationDeg ? ` · ${rotationDeg}°` : ""}
           </span>
-          {/* Free-mode resize handle (only when not calibrated) */}
-          {!mmPerPx ? (
-            <span
-              role="slider"
-              aria-label="Resize"
-              aria-valuenow={Math.round((placement.widthNorm ?? DEFAULT_WIDTH_NORM) * 100)}
-              tabIndex={0}
-              onPointerDown={(event) => {
-                event.stopPropagation();
-                (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-                resizeRef.current = {
-                  pointerId: event.pointerId,
-                  startX: event.clientX,
-                  startWidthNorm: placement.widthNorm ?? DEFAULT_WIDTH_NORM,
-                };
-              }}
-              onPointerMove={(event) => {
-                const resize = resizeRef.current;
-                if (!resize || resize.pointerId !== event.pointerId || stageSize.width === 0) return;
-                const delta = (event.clientX - resize.startX) / stageSize.width;
-                onResize(Math.min(1.5, Math.max(0.04, resize.startWidthNorm + delta * 2)));
-              }}
-              onPointerUp={() => {
-                resizeRef.current = null;
-              }}
-              className="absolute -bottom-3 -right-3 flex h-7 w-7 cursor-se-resize items-center justify-center rounded-full bg-[var(--accent)] text-black shadow"
+          {rotationDeg ? (
+            <button
+              type="button"
+              aria-label="Reset rotation"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => onUpdate({ rotationDeg: 0 })}
+              className="absolute -left-3 -top-3 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-soft)] text-xs text-[var(--foreground)] shadow"
             >
-              ⤡
-            </span>
+              ↺
+            </button>
+          ) : null}
+          {/* Corner resize handle — free mode only (calibrated stays true-scale).
+              Complements pinch for mouse/desktop. */}
+          {!mmPerPx ? (
+            <CornerResizeHandle
+              stageWidth={stageSize.width}
+              startWidthNorm={placement.widthNorm ?? DEFAULT_WIDTH_NORM}
+              onResize={(widthNorm) => onUpdate({ widthNorm })}
+            />
           ) : null}
         </>
       ) : null}
     </div>
   );
+}
+
+function CornerResizeHandle({
+  stageWidth,
+  startWidthNorm,
+  onResize,
+}: {
+  stageWidth: number;
+  startWidthNorm: number;
+  onResize: (widthNorm: number) => void;
+}) {
+  const ref = useRef<{ pointerId: number; startX: number; startWidthNorm: number } | null>(null);
+  return (
+    <span
+      role="slider"
+      aria-label="Resize"
+      aria-valuenow={Math.round(startWidthNorm * 100)}
+      tabIndex={0}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+        ref.current = { pointerId: event.pointerId, startX: event.clientX, startWidthNorm };
+      }}
+      onPointerMove={(event) => {
+        const state = ref.current;
+        if (!state || state.pointerId !== event.pointerId || stageWidth === 0) return;
+        const delta = (event.clientX - state.startX) / stageWidth;
+        onResize(Math.min(1.5, Math.max(0.04, state.startWidthNorm + delta * 2)));
+      }}
+      onPointerUp={() => {
+        ref.current = null;
+      }}
+      className="absolute -bottom-3 -right-3 flex h-7 w-7 cursor-se-resize items-center justify-center rounded-full bg-[var(--accent)] text-black shadow"
+    >
+      ⤡
+    </span>
+  );
+}
+
+function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function angleDeg(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 }
 
 function CalibrationOverlay({
@@ -702,24 +813,27 @@ async function exportComposite(
     const h = heightPx * stageToNatural;
     const cx = placement.xNorm * canvas.width;
     const cy = placement.yNorm * canvas.height;
-    const x = cx - w / 2;
-    const y = cy - h / 2;
+    const rotation = ((placement.rotationDeg ?? 0) * Math.PI) / 180;
 
+    // Draw rotated about the artwork centre so the export matches the canvas.
     ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(rotation);
     ctx.shadowColor = "rgba(0,0,0,0.42)";
     ctx.shadowBlur = Math.max(8, w * 0.04);
     ctx.shadowOffsetY = Math.max(6, h * 0.03);
     if (artwork.imageUrl) {
       const art = await loadImage(artwork.imageUrl);
-      ctx.drawImage(art, x, y, w, h);
+      ctx.drawImage(art, -w / 2, -h / 2, w, h);
     } else {
       ctx.fillStyle = "#e9e6df";
-      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(-w / 2, -h / 2, w, h);
     }
-    ctx.restore();
+    ctx.shadowColor = "transparent";
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
     ctx.lineWidth = Math.max(1, w * 0.004);
-    ctx.strokeRect(x, y, w, h);
+    ctx.strokeRect(-w / 2, -h / 2, w, h);
+    ctx.restore();
   }
 
   const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
